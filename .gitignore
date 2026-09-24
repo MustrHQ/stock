@@ -1,0 +1,16 @@
+# Settings written by the installer — contain database credentials
+config.php
+install.lock
+
+# Backups created by Admin → Updates & backups (keep the folder's guards)
+backups/*
+!backups/.htaccess
+!backups/index.php
+
+# Uploads, logs and OS/editor files
+uploads/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

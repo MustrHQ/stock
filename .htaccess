@@ -1,0 +1,5 @@
+# Keep settings, internals and the install lock out of the browser.
+<FilesMatch "^(config|config-sample|bootstrap|lib)\.php$|^install\.lock$|\.(md|sql|log)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes
