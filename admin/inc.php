@@ -14,7 +14,7 @@ function admin_header($title, $page) {
         'taxonomy'  => ['Categories & units', 'taxonomy.php'],
         'shops'     => ['Shops',              'shops.php'],
         'users'     => ['Users',              'users.php'],
-        'sales'     => ['Sales & NSEV',       'sales.php'],
+        'sales'     => ['Sales',              'sales.php'],
         'update'    => ['Updates & backups',  'update.php'],
     ];
     ?><!doctype html>
@@ -41,4 +41,4 @@ function admin_header($title, $page) {
 <?php endforeach;
 }
 
-function admin_footer() { echo '</main><script src="'.h(base_url()).'assets/app.js"></script></body></html>'; }
+function admin_footer() { echo '<footer class="app-foot">'.h(APP_NAME).' '.h(MUSTR_VERSION).' · <a href="'.h(APP_SOURCE_URL).'" rel="noopener">Source code</a> · AGPL-3.0</footer></main><script src="'.h(base_url()).'assets/app.js"></script></body></html>'; }

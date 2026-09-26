@@ -100,7 +100,7 @@ require __DIR__.'/inc/header.php';
 
 <?php if ($hasAuto): ?>
 <div class="notice"><?= icon('alert', 16) ?>
-  <div>Any item shown in purple was in negative stock last night and has been added to today's count automatically.</div>
+  <div>Items in purple show less than zero on the system, so they have been added to today's count for a check.</div>
 </div>
 <?php endif; ?>
 

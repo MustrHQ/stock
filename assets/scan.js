@@ -9,7 +9,7 @@
  *
  * What a scan does depends on the page (data-scan-mode on #scanner-root):
  *   tally  — add the barcode's pack quantity to that article's line   (count and waste sheets)
- *   pick   — select the article in the form and fill the quantity     (QCP, goods in, orders)
+ *   pick   — select the article in the form and fill the quantity     (damaged stock, goods in, orders)
  *   lookup — open the article                                           (lookup stock)
  *   teach  — link barcodes one after another                            (admin → barcodes)
  *

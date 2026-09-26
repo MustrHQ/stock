@@ -71,7 +71,7 @@ admin_header('Articles', 'articles');
         <input id="name" name="name" required value="<?= h($edit['name'] ?? '') ?>"></div>
       <div><label for="kind">Type</label>
         <select id="kind" name="kind">
-          <option value="product" <?= ($edit['kind'] ?? '') === 'product' ? 'selected' : '' ?>>Product (stales waste)</option>
+          <option value="product" <?= ($edit['kind'] ?? '') === 'product' ? 'selected' : '' ?>>Product we sell</option>
           <option value="ingredient" <?= ($edit['kind'] ?? '') === 'ingredient' ? 'selected' : '' ?>>Ingredient</option>
         </select></div>
       <div><label for="category_id">Category</label>

@@ -60,4 +60,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input id="password" type="password" name="password" required autocomplete="current-password"></div>
   <button class="btn primary" type="submit">Sign in</button>
   <p class="hint">Forgotten your password? Ask your shop's admin to reset it.</p>
+  <p class="hint" style="margin-top:8px"><?= h(APP_NAME) ?> <?= h(MUSTR_VERSION) ?> · <a href="<?= h(APP_SOURCE_URL) ?>" rel="noopener">Source code</a> · AGPL-3.0</p>
 </form><script src="assets/app.js"></script></body></html>

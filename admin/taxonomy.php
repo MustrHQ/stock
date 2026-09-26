@@ -34,7 +34,7 @@ admin_header('Categories & units', 'taxonomy');
 <div class="two-col">
   <div>
     <h1 class="admin-title">Categories</h1>
-    <p class="lede">Categories group the stales waste sheet and the loss report.</p>
+    <p class="lede">Categories group the product waste sheet and the loss report.</p>
     <div class="card pad">
       <form method="post" class="inline">
         <?= csrf_field() ?><input type="hidden" name="action" value="cat_save">

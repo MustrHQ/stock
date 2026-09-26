@@ -10,6 +10,7 @@ if (!function_exists('h')) { function h($s) { return htmlspecialchars((string)$s
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__.'/version.php';
 require_once __DIR__.'/inc/schema.php';
+require_once __DIR__.'/inc/demo.php';
 require_once __DIR__.'/inc/icons.php';
 
 $ROOT      = __DIR__;
@@ -145,59 +146,9 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $shopId = (int)$pdo->query("SELECT id FROM shops ORDER BY id LIMIT 1")->fetchColumn();
 
             if (!$cnt('units'))
-                foreach (['each','Pack','Bag','Bottle','Tub','Pouch','Loaf','Roll','Case','Tray','Litre','Kg'] as $u)
-                    $ins("INSERT INTO units (name) VALUES (?)", [$u]);
+                foreach (default_units() as $u) $ins("INSERT INTO units (name) VALUES (?)", [$u]);
 
-            if ($f['demo'] && !$cnt('articles')) {
-                $cats = [['Bread - Loaves','product'],['Bread - Rolls/Other','product'],['Savoury','product'],
-                         ['Sweet','product'],['Sandwiches','product'],['Meal Solutions','product'],
-                         ['Drinks','product'],['Syrups & Sauces','ingredient'],['Dry Goods','ingredient'],
-                         ['Consumables','ingredient']];
-                $i = 0;
-                if (!$cnt('categories'))
-                    foreach ($cats as $c) $ins("INSERT INTO categories (name,kind,sort) VALUES (?,?,?)", [$c[0], $c[1], $i += 10]);
-                $cid = []; foreach ($pdo->query("SELECT id,name FROM categories") as $r) $cid[$r['name']] = $r['id'];
-                $uid = []; foreach ($pdo->query("SELECT id,name FROM units") as $r) $uid[$r['name']] = $r['id'];
-
-                $ins("INSERT INTO suppliers (code,name,contact,email,lead_days,order_days)
-                      VALUES ('BAKE','Central Bakery','Orders desk','orders@example.com',1,'1,3,5')");
-                $ins("INSERT INTO suppliers (code,name,contact,email,lead_days,order_days)
-                      VALUES ('AMB','Ambient Wholesale','Account manager','sales@example.com',3,'2')");
-                $sup = []; foreach ($pdo->query("SELECT id,code FROM suppliers") as $r) $sup[$r['code']] = $r['id'];
-
-                $seed = [
-                  ['P1001','Sourdough Bloomer Loaf','Bread - Loaves','Loaf','product',0.62,2.20,'BAKE',6,3.72],
-                  ['P1002','Malted Brown Loaf 12mm','Bread - Loaves','Loaf','product',0.58,2.00,'BAKE',6,3.48],
-                  ['P1010','White & Wholemeal Roll','Bread - Rolls/Other','Roll','product',0.18,0.70,'BAKE',24,4.32],
-                  ['P1012','Sandwich Baguette','Bread - Rolls/Other','Roll','product',0.26,0.95,'BAKE',20,5.20],
-                  ['P2001','Sausage Roll','Savoury','each','product',0.38,1.25,'BAKE',48,18.24],
-                  ['P2002','Steak Bake','Savoury','each','product',0.55,1.95,'BAKE',36,19.80],
-                  ['P2003','Vegan Roll','Savoury','each','product',0.40,1.30,'BAKE',36,14.40],
-                  ['P3001','Glazed Ring Doughnut','Sweet','each','product',0.22,0.95,'BAKE',24,5.28],
-                  ['P3003','Caramel Shortbread','Sweet','each','product',0.31,1.20,'BAKE',20,6.20],
-                  ['P4001','Cheese Ploughmans Sandwich','Sandwiches','Pack','product',0.95,3.20,'BAKE',10,9.50],
-                  ['P5001','Mac and Cheese Hot Meal Box','Meal Solutions','Pack','product',1.10,3.60,'AMB',8,8.80],
-                  ['P6001','Still Water 500ml','Drinks','each','product',0.28,1.10,'AMB',24,6.72],
-                  ['P6002','Orange Juice 330ml','Drinks','each','product',0.55,1.85,'AMB',12,6.60],
-                  ['I9001','Caramel Syrup 1Ltr','Syrups & Sauces','Bottle','ingredient',3.40,0,'AMB',6,20.40],
-                  ['I9002','Cherry Syrup 1Ltr','Syrups & Sauces','Bottle','ingredient',3.40,0,'AMB',6,20.40],
-                  ['I9005','Sandwich Pickle','Syrups & Sauces','Pouch','ingredient',2.15,0,'AMB',4,8.60],
-                  ['I9010','White Sugar Sticks','Dry Goods','each','ingredient',0.01,0,'AMB',1000,10.00],
-                  ['I9012','Cinnamon Sugar Dusting 400g','Dry Goods','Tub','ingredient',2.80,0,'AMB',4,11.20],
-                  ['I9020','Takeaway Cup 12oz','Consumables','Case','ingredient',0.06,0,'AMB',500,30.00],
-                ];
-                foreach ($seed as $s) {
-                    $ins("INSERT INTO articles (code,name,category_id,unit_id,kind,cost_price,sell_price,
-                          supplier_id,pack_size,pack_cost) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                         [$s[0],$s[1],$cid[$s[2]] ?? null,$uid[$s[3]] ?? null,$s[4],$s[5],$s[6],
-                          $sup[$s[7]] ?? null,$s[8],$s[9]]);
-                }
-                foreach ($pdo->query("SELECT id,kind FROM articles") as $a) {
-                    $p = $a['kind'] === 'product';
-                    $ins("INSERT INTO schedules (article_id,shop_id,d0,d1,d2,d3,d4,d5,d6)
-                          VALUES (?,NULL,0,?,0,?,0,0,1)", [$a['id'], $p ? 1 : 0, $p ? 1 : 0]);
-                }
-            }
+            if ($f['demo']) demo_seed($pdo);
 
             if (!$cnt('users')) {
                 $ins("INSERT INTO users (name,email,pass_hash,role,shop_id,created_at) VALUES (?,?,?,'admin',?,NOW())",
@@ -320,11 +271,11 @@ $STEPS = [1 => 'Before you start', 2 => 'Database', 3 => 'Your shop', 4 => 'Done
       <h3>First shop</h3>
       <div class="grid g3">
         <div><label for="shop_code">Shop code</label>
-          <input id="shop_code" name="shop_code" required placeholder="0101" value="<?= h($p['scode'] ?? '') ?>"></div>
+          <input id="shop_code" name="shop_code" required placeholder="001" value="<?= h($p['scode'] ?? '') ?>"></div>
         <div><label for="shop_name">Shop name</label>
-          <input id="shop_name" name="shop_name" required placeholder="Pimlico" value="<?= h($p['sname'] ?? '') ?>"></div>
+          <input id="shop_name" name="shop_name" required placeholder="High Street" value="<?= h($p['sname'] ?? '') ?>"></div>
         <div><label for="shop_address">Address</label>
-          <input id="shop_address" name="shop_address" placeholder="12 Market Street" value="<?= h($p['saddr'] ?? '') ?>"></div>
+          <input id="shop_address" name="shop_address" placeholder="1 Example Road" value="<?= h($p['saddr'] ?? '') ?>"></div>
       </div>
       <h3>Admin account</h3>
       <div class="grid g3">
@@ -336,8 +287,8 @@ $STEPS = [1 => 'Before you start', 2 => 'Database', 3 => 'Your shop', 4 => 'Done
           <input id="admin_pass" type="password" name="admin_pass" required minlength="8" autocomplete="new-password"></div>
       </div>
       <div class="days" style="margin-top:18px">
-        <label><input type="checkbox" name="demo" value="1" <?= !isset($p['demo']) || $p['demo'] ? 'checked' : '' ?>>
-          Fill the catalogue with example articles, suppliers and a count schedule</label>
+        <label><input type="checkbox" name="demo" value="1" <?= !empty($p['demo']) ? 'checked' : '' ?>>
+          Add demo data to try things out — a fictional takeaway menu, suppliers and barcodes. You can remove it later in one click.</label>
       </div>
       <div class="wiz-actions"><button class="btn primary">Install</button></div>
     </form>
@@ -356,6 +307,6 @@ $STEPS = [1 => 'Before you start', 2 => 'Database', 3 => 'Your shop', 4 => 'Done
     <a class="btn primary" href="install.php?step=1">Back to the beginning</a>
   <?php endif; ?>
   </div>
-  <p class="wiz-foot">MustrHQ Stock · open source · MIT licence</p>
+  <p class="wiz-foot">MustrHQ Stock · open source · AGPL-3.0 licence</p>
 </div>
 </body></html>

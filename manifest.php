@@ -24,7 +24,7 @@ echo json_encode([
     ],
     'shortcuts' => [
         ['name' => 'Stock count',  'url' => './stock-count.php',  'icons' => [['src' => 'assets/icons/sc-count.png', 'sizes' => '96x96']]],
-        ['name' => 'Stales waste', 'url' => './stales-waste.php', 'icons' => [['src' => 'assets/icons/sc-waste.png', 'sizes' => '96x96']]],
+        ['name' => 'Product waste', 'url' => './product-waste.php', 'icons' => [['src' => 'assets/icons/sc-waste.png', 'sizes' => '96x96']]],
         ['name' => 'Ordering',     'url' => './orders.php',       'icons' => [['src' => 'assets/icons/sc-order.png', 'sizes' => '96x96']]],
         ['name' => 'Scan and look up', 'url' => './lookup.php',   'icons' => [['src' => 'assets/icons/sc-scan.png',  'sizes' => '96x96']]],
     ],

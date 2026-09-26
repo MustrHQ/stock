@@ -9,7 +9,7 @@ Stock counting, waste recording and stock-loss reporting for shops and kitchens.
 Plain PHP and MySQL — no framework, no Composer, no build step. Upload the folder to
 cPanel shared hosting and it runs.
 
-Part of the [MustrHQ](https://mustrhq.app) open-source set, alongside the clock-in and rota app.
+Part of the [MustrHQ](https://mustrhq.app) open-source set, alongside [MustrHQ Rota](https://github.com/MustrHQ/rota), the clock-in and rota app.
 
 <p align="center">
   <img src="docs/screenshots/01-home-out-of-stock-prompt.png" alt="MustrHQ Stock home screen" width="720">
@@ -28,15 +28,15 @@ Two ways in:
 |---|---|
 | Stock Count | The articles due to be counted today. Anything sitting in negative stock is pulled in automatically and shown in purple. |
 | Ingredient Waste | Day sheet for ingredients, with date arrows to go back a day. |
-| Stales Waste | Day sheet for products, grouped by category, with a charity tick per line. |
-| QCP | Quality checkpoint — search an article, record damaged units and a reason. |
+| Product waste | Day sheet for what you sell, grouped by category, with a tick for anything given to charity. |
+| Damaged stock | Write off items that arrived damaged, spoiled, or cannot be sold, with a reason. |
 | Ordering | Build an order from suggested quantities, print it, then book in what arrives. |
 | Goods In | Deliveries and shop-to-shop transfers, so expected stock is right. |
 | Lookup Stock | Catalogue search, on-hand figure and movement history per article. |
-| Stock Loss | Variance and waste by product, category and date, against NSEV. |
+| Stock loss | Variance and waste by product, category and date, as a share of net sales. |
 
 **Admin panel** (`/admin/`) — articles, suppliers, par levels, the count schedule,
-categories and units, shops, users, and the sales/NSEV figures the report measures against.
+categories and units, shops, users, and the sales figures the report measures against.
 
 ## Install
 
@@ -56,6 +56,18 @@ by hand — it writes `config.php` for you.
 6. **Done** — sign in, then **delete `install.php` from the server**.
 
 Requires PHP 7.4 or newer with PDO MySQL. Nothing else.
+
+### Demo data
+
+Tick **Add demo data** on the last install step to try the app with a small, entirely fictional
+takeaway menu — burgers, wraps, bowls, drinks and the ingredients and packaging behind them —
+from three made-up suppliers, with four barcodes you can type in to test scanning
+(`2000000000107`, `2000000000206` for a case of 24, `2000000000305`, `2000000000404`).
+Those sit in the barcode range reserved for in-store use, so they will never match a real product.
+
+When you are ready to go live, **Admin → Dashboard → Remove demo data** deletes it with all its
+stock history, barcodes and orders. Your own articles are never touched: demo articles are
+recognised by their `DEMO-` codes. If you skipped it at install, the same place offers to load it.
 
 ### Already running an earlier copy?
 
@@ -111,10 +123,10 @@ Anything with a barcode can be scanned instead of typed — typing still works e
 
 | Page | Each scan… |
 |---|---|
-| Stock count | adds to that item's count. Scan 12 sausage rolls, get 12. Items not on today's sheet offer **Add it**. |
-| Stales / ingredient waste | adds to that item's waste line. |
+| Stock count | adds to that item's count. Scan 12 cans, get 12. Items not on today's sheet offer **Add it**. |
+| Product / ingredient waste | adds to that item's waste line. |
 | Order being received | adds to the received column — scan the delivery off the van. |
-| Order being drafted, QCP, goods in | picks the item and fills the quantity. |
+| Order being drafted, damaged stock, goods in | picks the item and fills the quantity. |
 | Lookup stock | opens the item. |
 
 **First time a barcode is seen** the system asks which article it is and how many units one scan
@@ -137,7 +149,7 @@ icon, opens full-screen, and updates itself whenever you update the site.
 - **Android / Chrome / Edge:** sign in, then tap **Install app** on the home screen card
   (or browser menu → *Install app*).
 - **iPhone / iPad:** open the site in Safari → **Share** → **Add to Home Screen**.
-- Long-press the icon for shortcuts straight to Stock count, Stales waste, Ordering and Scan.
+- Long-press the icon for shortcuts straight to Stock count, Product waste, Ordering and Scan.
 
 Supervisors do counts, waste and deliveries on the shop floor; owners open the same app from
 anywhere to see every shop's sheets, loss report and orders. It is the same live site, so
@@ -192,8 +204,8 @@ the panel says so and links an admin to fix it.
 ## Counting once, twice or three times a week
 
 Admin → Count schedule is a grid of articles against the seven days. Tick the days each
-article should appear on the sheet: bread every day, syrups once on a Saturday, high-loss
-savouries three times a week. Tick several articles and use **Bulk set** to do a whole
+article should appear on the sheet: expensive proteins every day, dry goods once a week,
+packaging on Mondays. Tick several articles and use **Bulk set** to do a whole
 group at once.
 
 A schedule can apply to every shop (the default) or to one shop only — pick the shop in
@@ -211,9 +223,9 @@ article's rows:
 delivery        +qty      Goods In, or receiving an order
 transfer        ±qty      Goods In
 sale            −qty      Admin → Sales import
-waste_stales    −qty      Stales waste sheet
+waste_stales    −qty      Product waste sheet
 waste_ingredient −qty     Ingredient waste sheet
-waste_quality   −qty      Quality checkpoint
+waste_quality   −qty      Damaged stock
 count_adj       ±qty      posted when a count is confirmed
 ```
 
@@ -228,7 +240,7 @@ value    = variance × cost price
 The variance is written back as a `count_adj` movement, which is what makes the on-hand
 figure agree with what was actually on the shelf, and what the loss report adds up.
 
-Loss is shown as a percentage of NSEV (net sales excluding VAT). Enter NSEV by hand per day,
+Loss is shown as a percentage of net sales (excluding VAT). Enter net sales by hand per day,
 or import sales lines (`date, article code, qty, net value`) and the report derives it.
 
 Reopening a confirmed sheet reverses everything it posted, so nothing double-counts.
@@ -252,8 +264,9 @@ install.php           setup wizard (delete after running)
 index.php             tile launchpad
 stock-count.php       count sheet
 ingredient-waste.php  \ both are thin wrappers around
-stales-waste.php      / inc/waste_sheet.php
-quality-checkpoint.php
+product-waste.php     / inc/waste_sheet.php
+damaged-stock.php
+inc/demo.php          the fictional demo catalogue, and its remover
 orders.php            order list and order builder
 order.php             one order: edit, send, receive
 order-print.php       printable purchase order
@@ -331,13 +344,12 @@ Please report security issues privately, as described in [SECURITY.md](SECURITY.
 
 ## Licence
 
-MustrHQ Stock is free software, released under the
-[GNU Affero General Public Licence v3.0](LICENSE) (AGPL-3.0).
+MustrHQ Stock is free software under the **GNU Affero General Public License v3.0** — see [LICENSE](LICENSE).
 
-You can use it, change it and host it for your own business at no cost. If you modify it and
-let other people use your modified version over a network — for example, running it as a
-hosted service — you must make your modified source code available to them under the same licence.
+You can use, study, change and share it. If you run a modified copy that other people use over a
+network, you must offer them the source of your version. The **Source code** link on the sign-in
+page and in the admin footer is there for that: set `APP_SOURCE_URL` in `config.php` to wherever
+your version's code lives.
 
-Bundled third-party components keep their own licences: the ZXing barcode decoder
-(Apache 2.0, `assets/vendor/ZXING-LICENSE.txt`) and IBM Plex Sans (SIL Open Font Licence,
-`assets/fonts/OFL.txt`).
+Bundled third-party work: the ZXing barcode decoder (Apache License 2.0, `assets/vendor/ZXING-LICENSE.txt`)
+and IBM Plex Sans (SIL Open Font License 1.1, `assets/fonts/OFL.txt`).

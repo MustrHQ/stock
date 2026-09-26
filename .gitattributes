@@ -2,11 +2,5 @@
 *.png binary
 *.woff2 binary
 
-# Kept out of release zips (the in-app updater only needs the app itself)
-/.github            export-ignore
-/.gitattributes     export-ignore
-/.editorconfig      export-ignore
-/CONTRIBUTING.md    export-ignore
-/CODE_OF_CONDUCT.md export-ignore
-/SECURITY.md        export-ignore
-/docs               export-ignore
+# Screenshots are for the GitHub page only — kept out of release zips to stay under upload limits
+/docs export-ignore

@@ -1,5 +1,5 @@
 <?php
-/** Sales & NSEV — the figures the loss report measures against, plus a sales import. */
+/** Sales — the figures the loss report measures against, plus a sales import. */
 require __DIR__.'/inc.php';
 $shopId = (int)($_GET['shop'] ?? 0) ?: (int)col("SELECT id FROM shops WHERE active=1 ORDER BY code LIMIT 1");
 $report = null;
@@ -9,10 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $shopId = (int)($_POST['shop_id'] ?? $shopId);
     $a = $_POST['action'] ?? '';
 
-    if ($a === 'nsev') {
+    if ($a === 'net_sales') {
         $d = $_POST['sales_date'] ?? date('Y-m-d');
-        q("INSERT INTO sales_days (shop_id,sales_date,nsev) VALUES (?,?,?)
-           ON DUPLICATE KEY UPDATE nsev=VALUES(nsev)", [$shopId, $d, (float)($_POST['nsev'] ?? 0)]);
+        q("INSERT INTO sales_days (shop_id,sales_date,net_sales) VALUES (?,?,?)
+           ON DUPLICATE KEY UPDATE net_sales=VALUES(net_sales)", [$shopId, $d, (float)($_POST['net_sales'] ?? 0)]);
         flash('Daily net sales saved.');
         redirect('sales.php?shop='.$shopId);
     }
@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             q("DELETE FROM movements WHERE shop_id=? AND article_id=? AND mv_date=? AND mv_type=?",
               [$shopId, $art['id'], $d, MV_SALE]);
             move($shopId, $art['id'], $d, MV_SALE, -$qty, -$qty * (float)$art['cost_price'], 'SALES IMPORT');
-            q("INSERT INTO sales_days (shop_id,sales_date,nsev) VALUES (?,?,?)
-               ON DUPLICATE KEY UPDATE nsev=nsev+VALUES(nsev)", [$shopId, $d, 0]);
+            q("INSERT INTO sales_days (shop_id,sales_date,net_sales) VALUES (?,?,?)
+               ON DUPLICATE KEY UPDATE net_sales=net_sales+VALUES(net_sales)", [$shopId, $d, 0]);
             $ok++;
         }
         $report = ['ok' => $ok, 'bad' => $bad];
@@ -46,10 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $days = all("SELECT * FROM sales_days WHERE shop_id=? ORDER BY sales_date DESC LIMIT 30", [$shopId]);
-admin_header('Sales & NSEV', 'sales');
+admin_header('Sales', 'sales');
 ?>
-<h1 class="admin-title">Sales &amp; NSEV</h1>
-<p class="lede">Loss is reported as a percentage of NSEV (net sales excluding VAT). Enter the daily figure by hand,
+<h1 class="admin-title">Sales</h1>
+<p class="lede">Loss is reported as a percentage of net sales (sales excluding VAT). Enter the daily figure by hand,
   or import sales lines so expected stock moves down as things sell.</p>
 
 <form method="get" class="card pad inline">
@@ -67,22 +67,22 @@ admin_header('Sales & NSEV', 'sales');
     <div class="card pad">
       <h2 class="card-title">Daily net sales</h2>
       <form method="post" class="inline">
-        <?= csrf_field() ?><input type="hidden" name="action" value="nsev">
+        <?= csrf_field() ?><input type="hidden" name="action" value="net_sales">
         <input type="hidden" name="shop_id" value="<?= (int)$shopId ?>">
         <div style="flex:1 1 150px"><label for="sd">Date</label>
           <input id="sd" type="date" name="sales_date" value="<?= h(date('Y-m-d')) ?>" max="<?= h(date('Y-m-d')) ?>"></div>
-        <div style="flex:1 1 150px"><label for="nsev">NSEV (£)</label>
-          <input id="nsev" type="number" step="0.01" min="0" name="nsev" required></div>
+        <div style="flex:1 1 150px"><label for="net_sales">Net sales ex VAT (<?= h(APP_CCY) ?>)</label>
+          <input id="net_sales" type="number" step="0.01" min="0" name="net_sales" required></div>
         <div style="flex:0 0 auto"><button class="btn primary">Save</button></div>
       </form>
     </div>
     <div class="card scroll">
-      <table><thead><tr><th>Date</th><th class="num">NSEV</th></tr></thead><tbody>
+      <table><thead><tr><th>Date</th><th class="num">Net sales</th></tr></thead><tbody>
         <?php if (!$days): ?><tr><td colspan="2" class="empty">
           No figures entered yet.</td></tr><?php endif; ?>
         <?php foreach ($days as $d): ?>
           <tr><td><?= h(date('D d/m/Y', strtotime($d['sales_date']))) ?></td>
-            <td class="num"><?= money($d['nsev']) ?></td></tr>
+            <td class="num"><?= money($d['net_sales']) ?></td></tr>
         <?php endforeach; ?>
       </tbody></table>
     </div>

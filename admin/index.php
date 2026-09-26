@@ -1,11 +1,55 @@
 <?php
 require __DIR__.'/inc.php';
+require_once MUSTR_ROOT.'/inc/demo.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_check();
+    if (($_POST['action'] ?? '') === 'demo_remove') {
+        try { $n = demo_remove(); flash($n.' demo '.($n === 1 ? 'article' : 'articles').' removed, with their stock history, barcodes and orders. Your own data is untouched.'); }
+        catch (Throwable $e) { flash('Could not remove the demo data: '.$e->getMessage(), 'err'); }
+    }
+    if (($_POST['action'] ?? '') === 'demo_add') {
+        try { demo_seed(db()); flash('Demo data added: a fictional takeaway menu, three suppliers and four barcodes. Remove it from here whenever you like.'); }
+        catch (Throwable $e) { flash('Could not add the demo data: '.$e->getMessage(), 'err'); }
+    }
+    redirect('index.php');
+}
+$demo = demo_summary();
+$emptyCatalogue = !(int)col("SELECT COUNT(*) FROM articles");
 $shops = all("SELECT * FROM shops ORDER BY code");
 $today = date('Y-m-d');
 admin_header('Dashboard', 'index');
 ?>
 <h1 class="admin-title">System overview</h1>
 <p class="lede">Who is counting, what is still open, and where the loss sits today.</p>
+
+<?php if ($demo): ?>
+<section class="card pad" style="border-color:var(--warn-line);background:var(--warn-soft)">
+  <div class="install-row">
+    <span class="tile-ic" style="background:#fff;color:var(--warn)"><?= icon('box', 20) ?></span>
+    <div><h2 class="card-title">Demo data is loaded</h2>
+      <p class="lede" style="margin:0"><?= (int)$demo['articles'] ?> demo articles<?= $demo['movements'] ? ', '.(int)$demo['movements'].' stock movements' : '' ?><?= $demo['orders'] ? ' and '.(int)$demo['orders'].' orders' : '' ?>.
+        Remove it before you start using the system for real — anything you have added yourself stays.</p></div>
+    <form method="post" onsubmit="return confirm('Remove all demo data? Your own articles, sheets and orders are not touched.')">
+      <?= csrf_field() ?><input type="hidden" name="action" value="demo_remove">
+      <button class="btn danger"><?= icon('trash', 16) ?>Remove demo data</button></form>
+  </div>
+</section>
+<?php elseif ($emptyCatalogue): ?>
+<section class="card pad">
+  <div class="install-row">
+    <span class="tile-ic"><?= icon('box', 20) ?></span>
+    <div><h2 class="card-title">Your catalogue is empty</h2>
+      <p class="lede" style="margin:0">Add your own articles, or load a small fictional takeaway menu to try the app first.
+        It can be removed again in one click.</p></div>
+    <div class="btn-row">
+      <a class="btn primary" href="articles.php"><?= icon('plus', 16) ?>Add articles</a>
+      <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="demo_add">
+        <button class="btn">Load demo data</button></form>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 
 <div class="kpis">
   <div class="kpi"><div class="l">Active articles</div>
@@ -22,8 +66,8 @@ admin_header('Dashboard', 'index');
 <h2 class="section-title">Today by shop</h2>
 <div class="card scroll">
   <table>
-    <thead><tr><th>Shop</th><th>Stock count</th><th>Ingredient waste</th><th>Stales waste</th>
-      <th>QCP</th><th class="num">Negative lines</th><th class="num">Variance this week</th></tr></thead>
+    <thead><tr><th>Shop</th><th>Stock count</th><th>Ingredient waste</th><th>Product waste</th>
+      <th>Damaged</th><th class="num">Negative lines</th><th class="num">Variance this week</th></tr></thead>
     <tbody>
     <?php
     [$wf, $wt] = week_bounds($today);
@@ -65,7 +109,7 @@ admin_header('Dashboard', 'index');
                    LEFT JOIN users u ON u.id=cs.created_by
                    WHERE cs.status='confirmed'
                    UNION ALL
-                   SELECT ws.confirmed_at, s.code, s.name, CONCAT(UPPER(LEFT(ws.waste_type,1)), SUBSTRING(ws.waste_type,2), ' waste'), u.name
+                   SELECT ws.confirmed_at, s.code, s.name, CASE ws.waste_type WHEN 'stales' THEN 'Product waste' WHEN 'ingredient' THEN 'Ingredient waste' ELSE 'Damaged stock' END, u.name
                    FROM waste_sessions ws JOIN shops s ON s.id=ws.shop_id
                    LEFT JOIN users u ON u.id=ws.created_by
                    WHERE ws.status='confirmed'

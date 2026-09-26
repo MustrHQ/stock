@@ -38,10 +38,10 @@ if ($aid && ($a = article($aid))):
       <?php if (!$hist): ?><tr><td colspan="5" class="empty">No movements yet.</td></tr><?php endif; ?>
       <?php foreach ($hist as $m): ?>
         <tr><td><?= h(date('d/m/Y', strtotime($m['mv_date']))) ?></td>
-          <td><?= h(ucwords(str_replace('_',' ', $m['mv_type']))) ?></td>
+          <td><?= h(movement_label($m['mv_type'])) ?></td>
           <td class="num <?= $m['qty'] < 0 ? 'neg' : 'pos' ?>"><?= h(rtrim(rtrim(number_format((float)$m['qty'],3,'.',''),'0'),'.')) ?></td>
           <td class="num"><?= money($m['mv_value']) ?></td>
-          <td class="muted"><?= h($m['ref']) ?></td></tr>
+          <td class="muted"><?= h(movement_ref($m['ref'])) ?></td></tr>
       <?php endforeach; ?>
       </tbody></table>
   </div>

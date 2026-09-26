@@ -1,5 +1,3 @@
 <?php
-$TYPE = 'stales'; $KIND = 'product';
-$TITLE = 'Stales waste'; $HEADING = 'Today\'s stales waste';
-$CHARITY = true; $GROUPED = true;
-require __DIR__.'/inc/waste_sheet.php';
+/** Renamed in 1.5 — kept so old bookmarks and home-screen shortcuts still land somewhere. */
+header('Location: product-waste.php'.(empty($_SERVER['QUERY_STRING']) ? '' : '?'.$_SERVER['QUERY_STRING']), true, 301);

@@ -26,7 +26,7 @@ function sheet_state($shop, $date, $type) {
 }
 $ing = sheet_state($shop, $today, 'ingredient');
 $sta = sheet_state($shop, $today, 'stales');
-$qcp = sheet_state($shop, $today, 'quality');
+$dmg = sheet_state($shop, $today, 'quality');
 
 /* ---- ordering + out of stock ---- */
 $oos         = out_of_stock_alerts($shop);
@@ -43,7 +43,7 @@ if ($showPrompt) $_SESSION['oos_seen'] = $sig;
 $var = (float) col("SELECT COALESCE(SUM(mv_value),0) FROM movements WHERE shop_id=? AND mv_type=? AND mv_date BETWEEN ? AND ?",
                    [$shop, MV_COUNT_ADJ, $wkFrom, $wkTo]);
 $waste = (float) col("SELECT COALESCE(SUM(mv_value),0) FROM movements WHERE shop_id=? AND mv_type IN (?,?,?) AND mv_date BETWEEN ? AND ?",
-                     [$shop, MV_WASTE_STA, MV_WASTE_ING, MV_WASTE_QCP, $wkFrom, $wkTo]);
+                     [$shop, MV_WASTE_STA, MV_WASTE_ING, MV_WASTE_DMG, $wkFrom, $wkTo]);
 
 function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone) {
     echo '<a class="tile '.h($tone).'" href="'.h($href).'">'.
@@ -97,13 +97,13 @@ function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone)
        $countConfirmed ? 'Confirmed' : $countDone.' of '.$countTotal.' counted',
        $countConfirmed ? null : $countLeft, $countLeft ? 'todo' : 'done',
        $countConfirmed ? 'Complete' : 'To do', $countConfirmed ? 'ok' : 'todo');
-  tile('stales-waste.php', 'trash', 'amber', 'Stales waste', $sta['n'].' line'.($sta['n'] === 1 ? '' : 's').' recorded',
+  tile('product-waste.php', 'trash', 'amber', 'Product waste', $sta['n'].' line'.($sta['n'] === 1 ? '' : 's').' recorded',
        null, '', $sta['done'] ? 'Complete' : 'To do', $sta['done'] ? 'ok' : 'todo');
   tile('ingredient-waste.php', 'drop', 'amber', 'Ingredient waste', $ing['n'].' line'.($ing['n'] === 1 ? '' : 's').' recorded',
        null, '', $ing['done'] ? 'Complete' : 'To do', $ing['done'] ? 'ok' : 'todo');
-  tile('quality-checkpoint.php', 'shield', 'purple', 'Quality checkpoint', 'Damaged and unsellable',
-       $qcp['n'] ?: null, '', $qcp['done'] ? 'Complete' : ($qcp['n'] ? 'Open' : 'Nothing logged'),
-       $qcp['done'] ? 'ok' : ($qcp['n'] ? 'warn' : ''));
+  tile('damaged-stock.php', 'shield', 'purple', 'Damaged stock', 'Spoiled or unsellable',
+       $dmg['n'] ?: null, '', $dmg['done'] ? 'Complete' : ($dmg['n'] ? 'Open' : 'Nothing logged'),
+       $dmg['done'] ? 'ok' : ($dmg['n'] ? 'warn' : ''));
   ?>
 </div>
 
@@ -131,7 +131,7 @@ function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone)
   <div class="kpi"><div class="l">Count variance</div>
     <div class="v <?= $var < 0 ? 'neg' : ($var > 0 ? 'pos' : '') ?>"><?= money($var) ?></div><div class="h">At cost price</div></div>
   <div class="kpi"><div class="l">Waste</div>
-    <div class="v <?= $waste < 0 ? 'neg' : '' ?>"><?= money($waste) ?></div><div class="h">Stales, ingredient and QCP</div></div>
+    <div class="v <?= $waste < 0 ? 'neg' : '' ?>"><?= money($waste) ?></div><div class="h">Product, ingredient and damaged</div></div>
 </div>
 
 <?php if ($showPrompt): ?>

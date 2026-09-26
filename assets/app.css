@@ -462,3 +462,6 @@ tr.scan-hit td{animation:hit 1.4s ease-out}
 .install-card{position:relative}
 .install-card [data-install-dismiss]{position:absolute;top:10px;right:10px}
 .install-row > div{padding-right:28px}
+
+.app-foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);text-align:center}
+.app-foot a{color:var(--muted)}

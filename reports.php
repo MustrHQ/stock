@@ -10,9 +10,9 @@ $ref  = date('Y-m-d', strtotime($off.' week'));
 [$from, $to] = week_bounds($ref);
 $weekLabel = date('o', strtotime($from)).'W'.date('W', strtotime($from));
 
-/* ---- NSEV: use the imported daily figure when there is one, else derive from sales ---- */
-function nsev_range($shop, $from, $to) {
-    $imported = (float) col("SELECT COALESCE(SUM(nsev),0) FROM sales_days
+/* ---- Net sales: use the imported daily figure when there is one, else derive from sales ---- */
+function net_sales_range($shop, $from, $to) {
+    $imported = (float) col("SELECT COALESCE(SUM(net_sales),0) FROM sales_days
                              WHERE shop_id=? AND sales_date BETWEEN ? AND ?", [$shop, $from, $to]);
     if ($imported > 0) return $imported;
     return (float) col("SELECT COALESCE(SUM(-m.qty * a.sell_price),0) FROM movements m
@@ -23,8 +23,8 @@ function nsev_range($shop, $from, $to) {
 function ratio($num, $den) { return $den != 0 ? ($num / $den) * 100 : 0; }
 function qtyfmt($n) { return rtrim(rtrim(number_format((float)$n, 2, '.', ''), '0'), '.'); }
 
-$NSEV   = nsev_range($shop, $from, $to);
-$wasteT = [MV_WASTE_STA, MV_WASTE_ING, MV_WASTE_QCP];
+$NET   = net_sales_range($shop, $from, $to);
+$wasteT = [MV_WASTE_STA, MV_WASTE_ING, MV_WASTE_DMG];
 
 /* ---- variance by product ---- */
 $byProduct = all("SELECT a.name, a.code, SUM(m.mv_value) AS var, SUM(m.qty) AS qty
@@ -72,9 +72,9 @@ $stalesTotal = 0; foreach ($byCat as $r) $stalesTotal += (float)$r['stales'];
 $maxVar = 0.0001; foreach ($byProduct as $r) $maxVar = max($maxVar, abs((float)$r['var']));
 $maxSt  = 0.0001; foreach ($byCat as $r) $maxSt = max($maxSt, abs((float)$r['stales']));
 
-$nsevDay = [];
-foreach (all("SELECT sales_date, nsev FROM sales_days WHERE shop_id=? AND sales_date BETWEEN ? AND ?",
-             [$shop, $from, $to]) as $r) $nsevDay[$r['sales_date']] = (float)$r['nsev'];
+$netDay = [];
+foreach (all("SELECT sales_date, net_sales FROM sales_days WHERE shop_id=? AND sales_date BETWEEN ? AND ?",
+             [$shop, $from, $to]) as $r) $netDay[$r['sales_date']] = (float)$r['net_sales'];
 
 $TITLE = 'Stock loss';
 require __DIR__.'/inc/header.php';
@@ -94,15 +94,15 @@ require __DIR__.'/inc/header.php';
 <div class="kpis">
   <div class="kpi"><div class="l">Count variance</div>
     <div class="v <?= $varTotal < 0 ? 'neg' : ($varTotal > 0 ? 'pos' : '') ?>"><?= money($varTotal) ?></div>
-    <div class="h"><?= pct(ratio($varTotal, $NSEV)) ?> of NSEV</div></div>
+    <div class="h"><?= pct(ratio($varTotal, $NET)) ?> of net sales</div></div>
   <div class="kpi"><div class="l">Waste at cost</div>
     <div class="v <?= $stalesTotal < 0 ? 'neg' : '' ?>"><?= money($stalesTotal) ?></div>
-    <div class="h"><?= pct(ratio($stalesTotal, $NSEV)) ?> of NSEV</div></div>
+    <div class="h"><?= pct(ratio($stalesTotal, $NET)) ?> of net sales</div></div>
   <div class="kpi"><div class="l">Total loss</div>
     <div class="v <?= ($varTotal + $stalesTotal) < 0 ? 'neg' : '' ?>"><?= money($varTotal + $stalesTotal) ?></div>
-    <div class="h"><?= pct(ratio($varTotal + $stalesTotal, $NSEV)) ?> of NSEV</div></div>
-  <div class="kpi"><div class="l">NSEV</div><div class="v"><?= money($NSEV) ?></div>
-    <div class="h">Net sales excluding VAT</div></div>
+    <div class="h"><?= pct(ratio($varTotal + $stalesTotal, $NET)) ?> of net sales</div></div>
+  <div class="kpi"><div class="l">Net sales</div><div class="v"><?= money($NET) ?></div>
+    <div class="h">Excluding VAT</div></div>
 </div>
 
 <div class="two-col">
@@ -110,7 +110,7 @@ require __DIR__.'/inc/header.php';
     <div class="rep-head"><h2>Variance by product</h2></div>
     <div class="scroll"><table>
       <thead><tr><th>Article name</th><th class="num">Var.</th><th class="num">Qty</th>
-        <th class="num">NSEV</th><th class="num">Var. % NSEV</th></tr></thead>
+        <th class="num">Net sales</th><th class="num">% of sales</th></tr></thead>
       <tbody>
         <?php if (!$byProduct): ?><tr><td colspan="5" class="empty">
           No confirmed counts in this week yet.</td></tr><?php endif; ?>
@@ -124,19 +124,19 @@ require __DIR__.'/inc/header.php';
         <?php endforeach; ?>
       </tbody>
       <tfoot><tr><td>Total</td><td class="num"><?= money($varTotal) ?></td>
-        <td class="num"><?= h(qtyfmt($qtyTotal)) ?></td><td class="num"><?= money($NSEV) ?></td>
-        <td class="num"><?= pct(ratio($varTotal, $NSEV)) ?></td></tr></tfoot>
+        <td class="num"><?= h(qtyfmt($qtyTotal)) ?></td><td class="num"><?= money($NET) ?></td>
+        <td class="num"><?= pct(ratio($varTotal, $NET)) ?></td></tr></tfoot>
     </table></div>
   </div>
 
   <div class="card">
     <div class="rep-head"><h2>Variance by date</h2></div>
     <div class="scroll"><table>
-      <thead><tr><th>Date</th><th class="num">Var.</th><th class="num">NSEV</th><th class="num">Var. % NSEV</th></tr></thead>
+      <thead><tr><th>Date</th><th class="num">Var.</th><th class="num">Net sales</th><th class="num">% of sales</th></tr></thead>
       <tbody>
         <?php if (!$byDate): ?><tr><td colspan="4" class="empty">
           Nothing to show for this week.</td></tr><?php endif; ?>
-        <?php foreach ($byDate as $r): $ns = $nsevDay[$r['mv_date']] ?? nsev_range($shop, $r['mv_date'], $r['mv_date']); ?>
+        <?php foreach ($byDate as $r): $ns = $netDay[$r['mv_date']] ?? net_sales_range($shop, $r['mv_date'], $r['mv_date']); ?>
           <tr><td><?= h(date('d/m/Y', strtotime($r['mv_date']))) ?></td>
             <td class="num <?= $r['var'] < 0 ? 'neg' : 'pos' ?>"><?= money($r['var']) ?></td>
             <td class="num"><?= money($ns) ?></td>
@@ -144,14 +144,14 @@ require __DIR__.'/inc/header.php';
         <?php endforeach; ?>
       </tbody>
       <tfoot><tr><td>Total</td><td class="num"><?= money($varTotal) ?></td>
-        <td class="num"><?= money($NSEV) ?></td><td class="num"><?= pct(ratio($varTotal, $NSEV)) ?></td></tr></tfoot>
+        <td class="num"><?= money($NET) ?></td><td class="num"><?= pct(ratio($varTotal, $NET)) ?></td></tr></tfoot>
     </table></div>
   </div>
 
   <div class="card">
     <div class="rep-head"><h2>Waste at cost by category</h2></div>
     <div class="scroll"><table>
-      <thead><tr><th>Category</th><th class="num">Waste</th><th class="num">Category sales</th><th class="num">Waste % NSEV</th></tr></thead>
+      <thead><tr><th>Category</th><th class="num">Waste</th><th class="num">Category sales</th><th class="num">% of sales</th></tr></thead>
       <tbody>
         <?php if (!$byCat): ?><tr><td colspan="4" class="empty">
           No waste confirmed this week.</td></tr><?php endif; ?>
@@ -164,18 +164,18 @@ require __DIR__.'/inc/header.php';
         <?php endforeach; ?>
       </tbody>
       <tfoot><tr><td>Total</td><td class="num"><?= money($stalesTotal) ?></td>
-        <td class="num"><?= money($NSEV) ?></td><td class="num"><?= pct(ratio($stalesTotal, $NSEV)) ?></td></tr></tfoot>
+        <td class="num"><?= money($NET) ?></td><td class="num"><?= pct(ratio($stalesTotal, $NET)) ?></td></tr></tfoot>
     </table></div>
   </div>
 
   <div class="card">
     <div class="rep-head"><h2>Waste at cost by date</h2></div>
     <div class="scroll"><table>
-      <thead><tr><th>Date</th><th class="num">Waste</th><th class="num">NSEV</th><th class="num">Waste % NSEV</th></tr></thead>
+      <thead><tr><th>Date</th><th class="num">Waste</th><th class="num">Net sales</th><th class="num">% of sales</th></tr></thead>
       <tbody>
         <?php if (!$wasteByDate): ?><tr><td colspan="4" class="empty">
           No waste confirmed this week.</td></tr><?php endif; ?>
-        <?php foreach ($wasteByDate as $r): $ns = $nsevDay[$r['mv_date']] ?? nsev_range($shop, $r['mv_date'], $r['mv_date']); ?>
+        <?php foreach ($wasteByDate as $r): $ns = $netDay[$r['mv_date']] ?? net_sales_range($shop, $r['mv_date'], $r['mv_date']); ?>
           <tr><td><?= h(date('d/m/Y', strtotime($r['mv_date']))) ?></td>
             <td class="num neg"><?= money($r['stales']) ?></td>
             <td class="num"><?= money($ns) ?></td>
@@ -183,11 +183,11 @@ require __DIR__.'/inc/header.php';
         <?php endforeach; ?>
       </tbody>
       <tfoot><tr><td>Total</td><td class="num"><?= money($stalesTotal) ?></td>
-        <td class="num"><?= money($NSEV) ?></td><td class="num"><?= pct(ratio($stalesTotal, $NSEV)) ?></td></tr></tfoot>
+        <td class="num"><?= money($NET) ?></td><td class="num"><?= pct(ratio($stalesTotal, $NET)) ?></td></tr></tfoot>
     </table></div>
   </div>
 </div>
 
-<p class="lede" style="margin-top:16px">Variance is counted stock minus expected stock, valued at cost. Waste covers stales, ingredient and quality checkpoint sheets.</p>
+<p class="lede" style="margin-top:16px">Variance is counted stock minus expected stock, valued at cost. Waste covers the product waste, ingredient waste and damaged stock sheets.</p>
 
 <?php require __DIR__.'/inc/footer.php';

@@ -128,7 +128,7 @@ function mustr_tables() {
 
 'sales_days' => "CREATE TABLE IF NOT EXISTS sales_days (
   id INT AUTO_INCREMENT PRIMARY KEY, shop_id INT NOT NULL, sales_date DATE NOT NULL,
-  nsev DECIMAL(12,2) NOT NULL DEFAULT 0, UNIQUE KEY uniq_sales (shop_id, sales_date)
+  net_sales DECIMAL(12,2) NOT NULL DEFAULT 0, UNIQUE KEY uniq_sales (shop_id, sales_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     ];
 }
@@ -148,6 +148,7 @@ function mustr_migrate(PDO $pdo) {
     mustr_ensure_column($pdo, 'articles', 'supplier_ref', "supplier_ref VARCHAR(60) DEFAULT ''");
     mustr_ensure_column($pdo, 'articles', 'pack_size',    'pack_size DECIMAL(10,3) NOT NULL DEFAULT 1');
     mustr_ensure_column($pdo, 'articles', 'pack_cost',    'pack_cost DECIMAL(10,4) NOT NULL DEFAULT 0');
+    mustr_ensure_column($pdo, 'sales_days', 'net_sales', 'net_sales DECIMAL(12,2) NOT NULL DEFAULT 0');
     if (defined('MUSTR_VERSION')) {
         $s = $pdo->prepare("INSERT INTO meta (k,v) VALUES ('db_version',?) ON DUPLICATE KEY UPDATE v=VALUES(v)");
         $s->execute([MUSTR_VERSION]);

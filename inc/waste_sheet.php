@@ -1,6 +1,6 @@
 <?php
 /**
- * Shared waste sheet used by ingredient-waste.php and stales-waste.php.
+ * Shared waste sheet used by ingredient-waste.php and product-waste.php.
  * Expects $TYPE ('ingredient'|'stales'), $TITLE, $HEADING, $KIND ('ingredient'|'product'),
  * $CHARITY (bool), $GROUPED (bool).
  */

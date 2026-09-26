@@ -22,3 +22,9 @@ define('APP_NAME', 'MustrHQ Stock');
 define('APP_TZ', 'Europe/London');
 /** Currency symbol used in every money figure */
 define('APP_CCY', '£');
+
+/**
+ * Where people can get the source code of the version you run. The AGPL-3.0 licence asks anyone
+ * running a modified copy for others to offer this. Point it at your fork if you change the code.
+ */
+define('APP_SOURCE_URL', 'https://github.com/MustrHQ/stock');

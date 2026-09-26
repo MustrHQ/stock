@@ -75,7 +75,7 @@ const MV_SALE      = 'sale';
 const MV_TRANSFER  = 'transfer';
 const MV_WASTE_ING = 'waste_ingredient';
 const MV_WASTE_STA = 'waste_stales';
-const MV_WASTE_QCP = 'waste_quality';
+const MV_WASTE_DMG = 'waste_quality';
 const MV_COUNT_ADJ = 'count_adj';
 
 function move($shop, $article, $date, $type, $qty, $value, $ref = '') {
@@ -162,8 +162,8 @@ function resolve_article($id, $name = '') {
     return one("SELECT * FROM articles WHERE active=1 AND (name=? OR code=?) LIMIT 1", [$name, $name]);
 }
 
-function nsev($shop, $from, $to) {
-    return (float) col("SELECT COALESCE(SUM(nsev),0) FROM sales_days
+function net_sales($shop, $from, $to) {
+    return (float) col("SELECT COALESCE(SUM(net_sales),0) FROM sales_days
                         WHERE shop_id=? AND sales_date BETWEEN ? AND ?", [$shop, $from, $to]);
 }
 
@@ -434,4 +434,20 @@ function app_head_tags() {
            '<meta name="apple-mobile-web-app-capable" content="yes">'.
            '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'.
            '<meta name="apple-mobile-web-app-title" content="Mustr Stock">';
+}
+
+/** Plain-English names for movement types and references shown in stock history. */
+function movement_label($type) {
+    return [
+        MV_DELIVERY  => 'Delivery',        MV_SALE      => 'Sale',          MV_TRANSFER => 'Transfer',
+        MV_WASTE_ING => 'Ingredient waste', MV_WASTE_STA => 'Product waste', MV_WASTE_DMG => 'Damaged stock',
+        MV_COUNT_ADJ => 'Count adjustment',
+    ][$type] ?? ucfirst(str_replace('_', ' ', $type));
+}
+function movement_ref($ref) {
+    if (preg_match('/^(COUNT|WASTE|DAMAGED|ORDER)#(\d+)$/', (string)$ref, $m)) {
+        if ($m[1] === 'ORDER') { $no = col("SELECT order_no FROM orders WHERE id=?", [$m[2]]); return $no ?: 'Order'; }
+        return ['COUNT' => 'Stock count', 'WASTE' => 'Waste sheet', 'DAMAGED' => 'Damaged stock'][$m[1]].' #'.$m[2];
+    }
+    return (string)$ref;
 }

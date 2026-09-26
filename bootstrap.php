@@ -20,6 +20,7 @@ if (file_exists(MUSTR_ROOT.'/config.php')) {
 if (!defined('APP_NAME')) define('APP_NAME', 'MustrHQ Stock');
 if (!defined('APP_TZ'))   define('APP_TZ', 'Europe/London');
 if (!defined('APP_CCY'))  define('APP_CCY', '£');
+if (!defined('APP_SOURCE_URL')) define('APP_SOURCE_URL', 'https://github.com/MustrHQ/stock');
 
 date_default_timezone_set(APP_TZ);
 if (!defined('APP_IDLE_MINUTES')) define('APP_IDLE_MINUTES', 240);   // sign out after 4 idle hours

@@ -2,7 +2,25 @@
 
 All notable changes to MustrHQ Stock. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.5.0
+Everything specific to one company's internal system has been taken out, so the app reads as a
+general tool for any kitchen, café or shop.
+
+### Changed
+- **Demo data is new and entirely fictional** — a small takeaway menu from three made-up suppliers.
+  Every demo code starts with `DEMO-`, every demo email is on `example.com`, and demo barcodes sit in
+  the in-store range (200–299) that can never match a real product. It is off by default in the installer.
+- **Admin → Dashboard → Remove demo data** also clears the sample catalogue installed by 1.4.0 and
+  earlier. It matches that data on code *and* name, so an article of yours that reuses an old code
+  is never touched, and categories you still use are kept.
+- Sheets use general names: *Stales waste* is now **Product waste**, *Quality checkpoint* is now
+  **Damaged stock**, and reports measure against **net sales**. Old addresses, bookmarks and
+  home-screen shortcuts redirect to the new pages.
+- Installer placeholders and every screenshot in `docs/` use neutral example data.
+
+### Added
+- The release zip now carries the same community files as the repository: code of conduct,
+  contributing guide, security policy, issue templates, `.editorconfig` and `.gitattributes`.
 - Published as open source under the GNU AGPL-3.0.
 
 ## 1.4.0
