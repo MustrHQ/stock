@@ -15,7 +15,7 @@ $total = 0; foreach ($lines as $l) $total += (float)$l['qty'] * (float)$l['unit_
 $user = user();
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= h($o['order_no']) ?> · Purchase order</title>
+<title><?= h($o['order_no']) ?> – Purchase order</title>
 <link rel="stylesheet" href="assets/app.css"></head>
 <body>
 <div class="print-tools no-print">
@@ -25,10 +25,10 @@ $user = user();
 
 <article class="print-sheet">
   <div class="po-top">
-    <div class="brand"><span class="brand-mark">M</span><?= h(APP_NAME) ?></div>
+    <div><img src="assets/brand/logo-primary.svg" alt="MustrHQ" width="130" height="30"><div class="muted" style="margin-top:6px;font-weight:650"><?= h($SHOP['name']) ?></div></div>
     <div class="po-title">
       <h1>Purchase order</h1>
-      <div class="muted"><?= h($o['order_no']) ?> · <?= h(ORDER_STATES[$o['status']]) ?></div>
+      <div class="muted"><?= h($o['order_no']) ?></div>
     </div>
   </div>
 
@@ -63,7 +63,7 @@ $user = user();
         </tr>
       <?php endforeach; ?>
     </tbody>
-    <tfoot><tr><td colspan="5"><?= count($lines) ?> line<?= count($lines) === 1 ? '' : 's' ?><?= $o['min_order'] > 0 ? ' · supplier minimum '.money($o['min_order']) : '' ?></td>
+    <tfoot><tr><td colspan="5"><?= count($lines) ?> line<?= count($lines) === 1 ? '' : 's' ?><?= $o['min_order'] > 0 ? ', supplier minimum '.money($o['min_order']) : '' ?></td>
       <td class="num"><?= money($total) ?></td><td></td></tr></tfoot>
   </table></div>
 

@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'confirm') {
             $blank = (int) col("SELECT COUNT(*) FROM count_lines WHERE session_id=? AND qty IS NULL", [$sess['id']]);
             if ($blank) {
-                flash($blank.' line(s) still have no quantity. Enter a number for every article, or remove the line.', 'err');
+                flash($blank.' line'.($blank === 1 ? ' still has' : 's still have').' no quantity. Enter a number on every line, even if it is 0.', 'err');
                 redirect('stock-count.php');
             }
             q("DELETE FROM movements WHERE ref=?", ['COUNT#'.$sess['id']]);
@@ -96,15 +96,14 @@ $hasAuto = false; foreach ($lines as $l) if ($l['auto_added']) $hasAuto = true;
 $TITLE = 'Stock count';
 require __DIR__.'/inc/header.php';
 ?>
-<div class="page-head"><div><h1>Stock count</h1><div class="sub"><?= h(shop_label($SHOP)) ?></div></div></div>
+<div class="page-head"><div><h1>Stock count</h1><div class="sub"><?= h($SHOP['name']) ?>, counted <?= h(date('l j F', strtotime($date))) ?></div></div></div>
 
 <?php if ($hasAuto): ?>
 <div class="notice"><?= icon('alert', 16) ?>
-  <div>Items in purple show less than zero on the system, so they have been added to today's count for a check.</div>
+  <div>Lines marked in red were below zero on the system, so they have been added to today's count to check them.</div>
 </div>
 <?php endif; ?>
 
-<h2 class="section-title">Today's count</h2>
 
 <label class="sr" for="find" style="display:none">Search</label>
 <div class="toolbar">
@@ -115,7 +114,7 @@ require __DIR__.'/inc/header.php';
 <form method="post" data-dirty data-draft="count-<?= (int)$shop ?>-<?= h($date) ?>" data-locked="<?= $locked ? 1 : 0 ?>">
   <?= csrf_field() ?>
   <div class="card">
-    <div class="datebar"><?= h(date('l, d/m/Y', strtotime($date))) ?></div>
+    <div class="datebar"><span><?= h(date('l j F', strtotime($date))) ?></span></div>
     <div class="scroll">
     <table>
       <thead><tr>
@@ -134,15 +133,12 @@ require __DIR__.'/inc/header.php';
           <td><div class="art">
             <a class="info" href="lookup.php?a=<?= (int)$l['article_id'] ?>" title="Article details">i</a>
             <div><span class="name"><?= h($l['name']) ?></span>
-              <?php if ($l['auto_added']): ?>
-                <span class="tag todo">negative <?= h(number_format((float)($onhand[$l['article_id']] ?? 0), 0)) ?></span>
-              <?php endif; ?>
-              <div class="code"><?= h($l['code']) ?><span class="unit-sm"> · <?= h($l['unit'] ?: 'each') ?></span></div></div>
+              <div class="code"><?= h($l['code']) ?><?php if ($l['auto_added']): ?><span class="sys-neg">, system shows <?= h(fmt_qty($onhand[$l['article_id']] ?? 0)) ?></span><?php endif; ?><span class="unit-sm">, per <?= h($l['unit'] ?: 'each') ?></span></div></div>
           </div></td>
           <td class="col-unit"><?= h($l['unit'] ?: 'each') ?></td>
           <?php if ($locked): ?><td class="num"><?= h(rtrim(rtrim(number_format((float)$l['expected_qty'],2,'.',''),'0'),'.')) ?></td><?php endif; ?>
           <td class="num">
-            <input class="qty" type="number" step="0.001" inputmode="decimal" data-article="<?= (int)$l['article_id'] ?>"
+            <input class="qty" type="number" step="0.001" inputmode="decimal" placeholder="—" data-article="<?= (int)$l['article_id'] ?>"
                    name="qty[<?= (int)$l['id'] ?>]" value="<?= $l['qty'] === null ? '' : h(rtrim(rtrim(number_format((float)$l['qty'],3,'.',''),'0'),'.')) ?>"
                    <?= $locked ? 'readonly' : '' ?> aria-label="Quantity for <?= h($l['name']) ?>">
           </td>
@@ -164,7 +160,7 @@ require __DIR__.'/inc/header.php';
       <?php if ($locked): ?>
         Confirmed <?= h(date('H:i', strtotime($sess['confirmed_at']))) ?>
       <?php else: ?>
-        <?= count(array_filter($lines, fn($l) => $l['qty'] !== null)) ?> of <?= count($lines) ?> counted
+        <span data-progress><?= count(array_filter($lines, fn($l) => $l['qty'] !== null)) ?> of <?= count($lines) ?> counted</span>
       <?php endif; ?>
     </div>
     <a class="btn" href="index.php">Back</a>

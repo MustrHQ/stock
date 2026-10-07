@@ -24,11 +24,11 @@ admin_header('Dashboard', 'index');
 <p class="lede">Who is counting, what is still open, and where the loss sits today.</p>
 
 <?php if ($demo): ?>
-<section class="card pad" style="border-color:var(--warn-line);background:var(--warn-soft)">
+<section class="card pad" style="border-left:3px solid var(--amber)">
   <div class="install-row">
-    <span class="tile-ic" style="background:#fff;color:var(--warn)"><?= icon('box', 20) ?></span>
+    <span class="tile-ic" style="background:var(--amber-tint);color:var(--amber)"><?= icon('box', 20) ?></span>
     <div><h2 class="card-title">Demo data is loaded</h2>
-      <p class="lede" style="margin:0"><?= (int)$demo['articles'] ?> demo articles<?= $demo['movements'] ? ', '.(int)$demo['movements'].' stock movements' : '' ?><?= $demo['orders'] ? ' and '.(int)$demo['orders'].' orders' : '' ?>.
+      <p class="lede" style="margin:0"><?= (int)$demo['articles'] ?> demo articles<?= $demo['movements'] ? ', '.(int)$demo['movements'].' stock movements' : '' ?><?= $demo['orders'] ? ' and '.(int)$demo['orders'].' order'.($demo['orders'] == 1 ? '' : 's') : '' ?>.
         Remove it before you start using the system for real — anything you have added yourself stays.</p></div>
     <form method="post" onsubmit="return confirm('Remove all demo data? Your own articles, sheets and orders are not touched.')">
       <?= csrf_field() ?><input type="hidden" name="action" value="demo_remove">
@@ -82,7 +82,7 @@ admin_header('Dashboard', 'index');
                           WHERE shop_id=? AND mv_type=? AND mv_date BETWEEN ? AND ?",
                          [$s['id'], MV_COUNT_ADJ, $wf, $wt]);
       $tag = fn($st) => $st === 'confirmed'
-          ? '<span class="tag ok">COMPLETE</span>' : '<span class="tag todo">TO DO</span>';
+          ? '<span class="tag ok">Confirmed</span>' : '<span class="tag todo">To do</span>';
     ?>
       <tr>
         <td><?= h($s['code'].' '.$s['name']) ?><div class="code muted"><?= h($s['address']) ?></div></td>

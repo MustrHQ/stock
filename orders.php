@@ -85,7 +85,7 @@ require __DIR__.'/inc/header.php';
     <div class="oos-sup">
       <div class="oos-sup-head">
         <div><h3><?= h($supName) ?></h3>
-          <div class="muted"><?= $pending ? count($pending).' to order' : 'Already on order — nothing more to do' ?><?= $pending && count($items) > count($pending) ? ' · '.(count($items) - count($pending)).' already on order' : '' ?></div></div>
+          <div class="muted"><?= $pending ? count($pending).' to order' : 'Already on order — nothing more to do' ?><?= $pending && count($items) > count($pending) ? ', '.(count($items) - count($pending)).' already on order' : '' ?></div></div>
         <?php if ($sid && $pending): ?>
           <form method="post" class="inline-form">
             <?= csrf_field() ?><input type="hidden" name="action" value="reorder">

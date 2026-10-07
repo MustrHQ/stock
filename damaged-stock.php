@@ -62,9 +62,8 @@ $total = 0; foreach ($lines as $l) $total += (float)$l['line_value'];
 $TITLE = 'Damaged stock';
 require __DIR__.'/inc/header.php';
 ?>
-<div class="page-head"><div><h1>Damaged stock</h1><div class="sub"><?= h(shop_label($SHOP)) ?> · <?= h(date('l, d/m/Y')) ?></div></div></div>
+<div class="page-head"><div><h1>Damaged stock</h1><div class="sub"><?= h($SHOP['name']) ?>, <?= h(date('l j F')) ?></div></div><?= waste_switch('damaged-stock.php') ?></div>
 
-<h2 class="section-title">Damaged and unsellable articles</h2>
 
 <?php if (!$locked): ?>
 <div class="card pad">
@@ -84,7 +83,7 @@ require __DIR__.'/inc/header.php';
     </div>
     <div style="flex:1 1 110px">
       <label for="qty">Quantity</label>
-      <input id="qty" class="qty" style="width:100%" type="number" step="0.001" min="0.001" name="qty" required>
+      <input id="qty" class="qty" style="width:100%" placeholder="—" type="number" step="0.001" min="0.001" name="qty" required>
     </div>
     <div style="flex:1 1 170px">
       <label for="reason">Reason</label>
@@ -136,7 +135,7 @@ require __DIR__.'/inc/header.php';
 
 <form method="post" class="actionbar">
   <?= csrf_field() ?>
-  <div class="left"><?= count($lines) ?> line(s) · <?= money($total) ?> at cost</div>
+  <div class="left"><?= count($lines) ?> line<?= count($lines) === 1 ? '' : 's' ?>, <?= money($total) ?> at cost</div>
   <a class="btn" href="index.php">Back</a>
   <?php if ($locked && is_manager()): ?>
     <button class="btn danger" name="action" value="reopen">Reopen sheet</button>

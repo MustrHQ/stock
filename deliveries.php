@@ -87,7 +87,7 @@ require __DIR__.'/inc/header.php';
           <td><?= h($m['mv_type'] === MV_DELIVERY ? 'Delivery' : 'Transfer') ?></td>
           <td class="num <?= $m['qty'] < 0 ? 'neg' : '' ?>"><?= h(rtrim(rtrim(number_format((float)$m['qty'],3,'.',''),'0'),'.')) ?></td>
           <td class="num"><?= money($m['mv_value']) ?></td>
-          <td class="muted"><?= h($m['ref']) ?></td>
+          <td class="muted"><?= h(movement_ref($m['ref'])) ?></td>
           <td class="num"><?php if (is_manager()): ?>
             <form method="post" onsubmit="return confirm('Delete this entry?')">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete">

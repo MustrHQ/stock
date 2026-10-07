@@ -77,9 +77,8 @@ $total = 0; foreach ($saved as $l) $total += (float)$l['line_value'];
 
 require __DIR__.'/header.php';
 ?>
-<div class="page-head"><div><h1><?= h($TITLE) ?></h1><div class="sub"><?= h(shop_label($SHOP)) ?></div></div></div>
+<div class="page-head"><div><h1><?= h($TITLE) ?></h1><div class="sub"><?= h($SHOP['name']) ?></div></div><?= waste_switch(basename($_SERVER['SCRIPT_NAME'])) ?></div>
 
-<h2 class="section-title"><?= h($HEADING) ?></h2>
 
 <div class="toolbar">
   <input class="search" data-filter placeholder="Search" autocomplete="off" aria-label="Search articles">
@@ -91,7 +90,7 @@ require __DIR__.'/header.php';
   <div class="card">
     <div class="datebar">
       <a href="<?= h($self) ?>?d=<?= h(date('Y-m-d', strtotime($date.' -1 day'))) ?>" aria-label="Previous day"><?= icon('left', 18) ?></a>
-      <span><?= h(date('l, d/m/Y', strtotime($date))) ?></span>
+      <span><?= h(date('l j F', strtotime($date))) ?></span>
       <?php if ($date < date('Y-m-d')): ?>
         <a href="<?= h($self) ?>?d=<?= h(date('Y-m-d', strtotime($date.' +1 day'))) ?>" aria-label="Next day"><?= icon('right', 18) ?></a>
       <?php else: ?><span class="gap"></span><?php endif; ?>
@@ -116,11 +115,11 @@ require __DIR__.'/header.php';
           <tr data-row="<?= h($a['name'].' '.$a['code']) ?>" data-in="g<?= $gi ?>">
             <td><div class="art">
               <a class="info" href="lookup.php?a=<?= (int)$a['id'] ?>" title="Article details">i</a>
-              <div><span class="name"><?= h($a['name']) ?></span><div class="code"><?= h($a['code']) ?><span class="unit-sm"> · <?= h($a['unit'] ?: 'each') ?></span></div></div>
+              <div><span class="name"><?= h($a['name']) ?></span><div class="code"><?= h($a['code']) ?><span class="unit-sm">, per <?= h($a['unit'] ?: 'each') ?></span></div></div>
             </div></td>
             <td class="col-unit"><?= h($a['unit'] ?: 'each') ?></td>
             <td class="num">
-              <input class="qty" type="number" step="0.001" min="0" inputmode="decimal" data-article="<?= (int)$a['id'] ?>"
+              <input class="qty" type="number" step="0.001" min="0" inputmode="decimal" placeholder="—" data-article="<?= (int)$a['id'] ?>"
                      name="qty[<?= (int)$a['id'] ?>]"
                      value="<?= $l ? h(rtrim(rtrim(number_format((float)$l['qty'],3,'.',''),'0'),'.')) : '' ?>"
                      <?= $locked ? 'readonly' : '' ?> aria-label="Quantity wasted, <?= h($a['name']) ?>">
@@ -147,8 +146,7 @@ require __DIR__.'/header.php';
 
   <div class="actionbar">
     <div class="left">
-      <?= count($saved) ?> line(s) · <?= money($total) ?> at cost
-      <?= $locked ? ' · confirmed '.h(date('H:i', strtotime($sess['confirmed_at']))) : '' ?>
+      <?= count($saved) ?> line<?= count($saved) === 1 ? '' : 's' ?>, <?= money($total) ?> at cost<?= $locked ? '. Confirmed at '.h(date('H:i', strtotime($sess['confirmed_at']))) : '' ?>
     </div>
     <a class="btn" href="index.php">Back</a>
     <?php if ($locked && is_manager()): ?>

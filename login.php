@@ -39,26 +39,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = 'That email and password do not match an account.'.($left > 0 && $left <= 2 ? " $left attempt".($left === 1 ? '' : 's')." left before a short lock-out." : '');
     }
 }
+/* The name on the sign-in screen: the shop, when there is only one. */
+$brandName = APP_NAME;
+try {
+    $shops = all("SELECT name FROM shops WHERE active=1 ORDER BY code LIMIT 2");
+    if (count($shops) === 1) $brandName = $shops[0]['name'];
+} catch (Throwable $e) { /* not installed yet */ }
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f1a2c"><?= app_head_tags() ?>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#01216C"><?= app_head_tags() ?>
 <meta name="robots" content="noindex,nofollow">
-<title>Sign in · <?= h(APP_NAME) ?></title>
-<link rel="stylesheet" href="assets/app.css"></head>
-<body class="login-body">
-<form class="login-card" method="post" autocomplete="on">
-  <div class="brand"><span class="brand-mark">M</span>MustrHQ <small>Stock</small></div>
-  <h1>Sign in</h1>
-  <p class="lede">Count stock, record waste and place orders for your shop.</p>
-  <?php if ($expired && !$err): ?><div class="msg warn" role="status"><?= icon('info', 16) ?><span>You were signed out after a while with no activity. Sign in again to carry on.</span></div><?php endif; ?>
-  <?php if ($err): ?><div class="msg err" role="alert"><?= icon('alert', 16) ?><span><?= h($err) ?></span></div><?php endif; ?>
-  <?= csrf_field() ?>
-  <div class="field"><label for="email">Email</label>
-    <input id="email" type="email" name="email" required autofocus autocomplete="username"
-           value="<?= h($_POST['email'] ?? '') ?>"></div>
-  <div class="field"><label for="password">Password</label>
-    <input id="password" type="password" name="password" required autocomplete="current-password"></div>
-  <button class="btn primary" type="submit">Sign in</button>
-  <p class="hint">Forgotten your password? Ask your shop's admin to reset it.</p>
-  <p class="hint" style="margin-top:8px"><?= h(APP_NAME) ?> <?= h(MUSTR_VERSION) ?> · <a href="<?= h(APP_SOURCE_URL) ?>" rel="noopener">Source code</a> · AGPL-3.0</p>
-</form><script src="assets/app.js"></script></body></html>
+<title>Sign in – <?= h($brandName) ?></title>
+<link rel="stylesheet" href="assets/app.css?v=<?= h(MUSTR_VERSION) ?>"></head>
+<body>
+<div class="login">
+  <section class="art">
+    <div class="brand">
+      <span class="brand-box"><img src="assets/brand/logo-mark.svg" alt="" width="26" height="26"></span>
+      <span class="brand-name"><?= h($brandName) ?><small>Stock</small></span>
+    </div>
+    <div class="art-body">
+      <h2>Count it once. Order it right.</h2>
+      <p>Stock counts, waste and orders for the shop floor — and the stock-loss figures for whoever owns the place.</p>
+    </div>
+    <div class="faint">MustrHQ Stock <?= h(MUSTR_VERSION) ?> is free software. <a href="<?= h(APP_SOURCE_URL) ?>" rel="noopener">Source code</a></div>
+  </section>
+  <section class="frm">
+    <form class="login-form" method="post" autocomplete="on">
+      <div><h1>Sign in</h1>
+        <p class="lede">Use the email and password your manager set up for you.</p></div>
+      <?php if ($expired && !$err): ?><div class="msg warn" role="status"><?= icon('info', 16) ?><span>You were signed out after a while with no activity. Sign in again to carry on.</span></div><?php endif; ?>
+      <?php if ($err): ?><div class="msg err" role="alert"><?= icon('alert', 16) ?><span><?= h($err) ?></span></div><?php endif; ?>
+      <?= csrf_field() ?>
+      <div class="field"><label for="email">Email</label>
+        <input id="email" type="email" name="email" required autofocus autocomplete="username"
+               value="<?= h($_POST['email'] ?? '') ?>"></div>
+      <div class="field"><label for="password">Password</label>
+        <input id="password" type="password" name="password" required autocomplete="current-password"></div>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p class="hint">Forgotten your password? Ask your shop's admin to reset it.</p>
+    </form>
+  </section>
+</div>
+<script src="assets/app.js"></script></body></html>

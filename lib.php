@@ -149,7 +149,7 @@ function waste_session($shop, $date, $type, $create = true) {
 }
 
 /** Tile status for the launchpad: open + has entries => TO DO, confirmed => COMPLETE. */
-function tile_status($confirmed) { return $confirmed ? 'COMPLETE' : 'TO DO'; }
+function tile_status($confirmed) { return $confirmed ? 'Confirmed' : 'To do'; }
 
 function article($id) { return one("SELECT * FROM articles WHERE id=?", [$id]); }
 
@@ -449,5 +449,16 @@ function movement_ref($ref) {
         if ($m[1] === 'ORDER') { $no = col("SELECT order_no FROM orders WHERE id=?", [$m[2]]); return $no ?: 'Order'; }
         return ['COUNT' => 'Stock count', 'WASTE' => 'Waste sheet', 'DAMAGED' => 'Damaged stock'][$m[1]].' #'.$m[2];
     }
+    if (preg_match('/^[A-Z][A-Z ]+$/', (string)$ref)) return ucfirst(strtolower($ref));   // "SALES IMPORT" -> "Sales import"
     return (string)$ref;
+}
+
+/** Switch between the three waste sheets. */
+function waste_switch($current) {
+    $tabs = ['product-waste.php' => 'Product', 'ingredient-waste.php' => 'Ingredient', 'damaged-stock.php' => 'Damaged'];
+    $out = '<nav class="btn-row no-print" aria-label="Waste sheets">';
+    foreach ($tabs as $f => $l)
+        $out .= '<a class="btn sm'.($f === $current ? ' on' : '').'" href="'.h($f).($f !== 'damaged-stock.php' && isset($_GET['d']) ? '?d='.h($_GET['d']) : '').'"'.
+                ($f === $current ? ' aria-current="page"' : '').'>'.h($l).'</a>';
+    return $out.'</nav>';
 }

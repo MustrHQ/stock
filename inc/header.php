@@ -5,34 +5,45 @@ $SHOP  = current_shop();
 $TITLE = $TITLE ?? APP_NAME;
 $B     = base_url();
 $OOS_STRIP = ($SHOP && empty($HIDE_OOS)) ? out_of_stock_alerts($SHOP['id']) : [];
+
+/* Which top-level section this page belongs to. */
+$here = basename($_SERVER['SCRIPT_NAME']);
+$sections = [
+    ['Today',    'index.php',         'home',   ['index.php']],
+    ['Count',    'stock-count.php',   'count',  ['stock-count.php']],
+    ['Waste',    'product-waste.php', 'trash',  ['product-waste.php', 'ingredient-waste.php', 'damaged-stock.php']],
+    ['Orders',   'orders.php',        'cart',   ['orders.php', 'order.php']],
+    ['Goods in', 'deliveries.php',    'truck',  ['deliveries.php']],
+    ['Stock',    'lookup.php',        'box',    ['lookup.php']],
+    ['Loss',     'reports.php',       'chart',  ['reports.php']],
+];
 ?><!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f1a2c"><?= app_head_tags() ?>
-<title><?= h($TITLE) ?> · <?= h(APP_NAME) ?></title>
-<link rel="stylesheet" href="<?= h($B) ?>assets/app.css">
+<meta name="theme-color" content="#01216C"><?= app_head_tags() ?>
+<title><?= h($TITLE) ?> – <?= h($SHOP['name'] ?? APP_NAME) ?></title>
+<link rel="stylesheet" href="<?= h($B) ?>assets/app.css?v=<?= h(MUSTR_VERSION) ?>">
 </head><body>
 <header class="topbar">
-  <a class="brand" href="<?= h($B) ?>index.php"><span class="brand-mark">M</span>MustrHQ <small>Stock</small></a>
-  <div class="crumb">
-    <?php if ($TITLE !== 'Home'): ?><a href="<?= h($B) ?>index.php">Home</a><?= icon('right', 14) ?><?php endif; ?>
-    <strong><?= h($TITLE) ?></strong>
+  <a class="brand" href="<?= h($B) ?>index.php">
+    <span class="brand-box"><img src="<?= h($B) ?>assets/brand/logo-mark.svg" alt="" width="26" height="26"></span>
+    <span class="brand-name"><?= h($SHOP['name'] ?? APP_NAME) ?><small>Stock</small></span>
+  </a>
+  <nav class="mainnav" aria-label="Sections">
+    <?php foreach ($sections as $s): $on = in_array($here, $s[3], true); ?>
+      <a href="<?= h($B.$s[1]) ?>"<?= $on ? ' aria-current="page"' : '' ?>><?= icon($s[2], 18) ?><span><?= h($s[0]) ?></span></a>
+    <?php endforeach; ?>
+  </nav>
+  <div class="topbar-right">
+    <?php if (is_admin()): ?><a class="top-link" href="<?= h($B) ?>admin/index.php" title="Admin"><?= icon('settings', 18) ?><span class="lbl">Admin</span></a><?php endif; ?>
+    <?= logout_button() ?>
   </div>
-  <div class="spacer"></div>
-  <?php if ($SHOP): ?>
-    <div class="shop-pill" title="<?= h(shop_label($SHOP)) ?>"><?= icon('store', 15) ?><span><?= h($SHOP['code'].' '.$SHOP['name']) ?></span></div>
-  <?php endif; ?>
-  <?php if (is_admin()): ?>
-    <a class="top-link" href="<?= h($B) ?>admin/index.php" title="Admin panel"><?= icon('settings', 17) ?><span class="lbl">Admin</span></a>
-  <?php endif; ?>
-  <?= logout_button() ?>
 </header>
 <?php if ($OOS_STRIP): ?>
 <div class="alert-strip" role="status">
   <?= icon('alert', 16) ?>
-  <span><strong><?= count($OOS_STRIP) ?> <?= count($OOS_STRIP) === 1 ? 'item is' : 'items are' ?> out of stock</strong>
-    and not on order.</span>
-  <a href="<?= h($B) ?>orders.php#out">Review and order</a>
+  <span><?= count($OOS_STRIP) ?> <?= count($OOS_STRIP) === 1 ? 'item has' : 'items have' ?> run out and <?= count($OOS_STRIP) === 1 ? 'is' : 'are' ?> not on an order.</span>
+  <a href="<?= h($B) ?>orders.php#out">Order now</a>
 </div>
 <?php endif; ?>
 <main class="wrap">

@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ok++;
         }
         $report = ['ok' => $ok, 'bad' => $bad];
-        flash($ok.' sales line(s) imported.'.($bad ? ' '.count($bad).' skipped.' : ''), $bad ? 'warn' : 'ok');
+        flash($ok.' sales line'.($ok === 1 ? '' : 's').' imported.'.($bad ? ' '.count($bad).' skipped.' : ''), $bad ? 'warn' : 'ok');
     }
 }
 

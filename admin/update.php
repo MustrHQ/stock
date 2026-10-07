@@ -150,7 +150,7 @@ admin_header('Updates & backups', 'update');
 <?php if ($preview): ?>
 <section class="card" style="border-color:var(--brand)">
   <div class="rep-head"><div><h2><?= icon('upload', 17) ?> Ready to install version <?= h($preview['version']) ?></h2>
-    <div class="wk"><?= h($preview['file']) ?> · you are running <?= h(MUSTR_VERSION) ?></div></div></div>
+    <div class="wk">From <?= h($preview['file']) ?>. You are running <?= h(MUSTR_VERSION) ?>.</div></div></div>
   <div class="pad">
     <?php if (version_compare($preview['version'], MUSTR_VERSION, '<')): ?>
       <div class="msg warn"><?= icon('alert', 16) ?><span>This is an <strong>older</strong> version than the one running. Only continue if you mean to go back.</span></div>

@@ -1,6 +1,6 @@
 # MustrHQ Stock
 
-[![Latest release](https://img.shields.io/github/v/release/MustrHQ/stock?label=release)](https://github.com/MustrHQ/stock/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/MustrHQ/stock?label=release&color=01216C)](https://github.com/MustrHQ/stock/releases/latest)
 [![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue.svg)](LICENSE)
 ![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-MariaDB-4479a1.svg)
@@ -9,10 +9,11 @@ Stock counting, waste recording and stock-loss reporting for shops and kitchens.
 Plain PHP and MySQL — no framework, no Composer, no build step. Upload the folder to
 cPanel shared hosting and it runs.
 
-Part of the [MustrHQ](https://mustrhq.app) open-source set, alongside [MustrHQ Rota](https://github.com/MustrHQ/rota), the clock-in and rota app.
+Part of the [MustrHQ](https://mustrhq.app) open-source set, alongside
+[MustrHQ Rota](https://github.com/MustrHQ/rota) and [MustrHQ Recipes](https://github.com/MustrHQ/recipes).
 
 <p align="center">
-  <img src="docs/screenshots/01-home-out-of-stock-prompt.png" alt="MustrHQ Stock home screen" width="720">
+  <img src="docs/screenshots/01-today.png" alt="MustrHQ Stock: the Today screen with the day's jobs, what has run out and what is arriving" width="760">
 </p>
 
 **Quick start:** download the latest zip from [Releases](https://github.com/MustrHQ/stock/releases/latest),
@@ -294,11 +295,21 @@ assets/app.js         table filter, article picker, unsaved-changes warning
 
 ## Design
 
-One stylesheet, no framework. IBM Plex Sans is bundled in `assets/fonts/` (SIL Open Font
-Licence) so nothing loads from a third-party server. Icons are inline SVG. Every stock figure
-uses tabular numerals so columns line up. Pages are checked at desktop and phone widths —
-on a phone, count and waste sheets fold the unit under the article name so the quantity box
-stays thumb-sized, and the action bar pins to the bottom of the screen.
+MustrHQ Stock uses the same design as MustrHQ Recipes, so the products sit together on one
+tablet or one owner's phone: MustrHQ navy (`#01216C`), the white logo tile with your shop's
+name beside it, Archivo for all text (its condensed cut for codes and big figures), and
+navy-outlined buttons. Amber is kept for the one thing to do next — on Today, the next job's
+button; in the scanner, the frame.
+
+Colour carries meaning and nothing else: green is confirmed, red is run out or lost, amber is
+waiting. On count and waste sheets an empty line shows a dash and every number you type turns
+navy, so you can see the sheet filling up as you count.
+
+The admin uses the same navy sidebar as Recipes. On a phone it folds into a header with the
+sections in a row underneath; the shop screens keep their tabs in the header.
+
+One stylesheet, no framework. The font (SIL Open Font Licence) and logo files are bundled in
+`assets/`, so nothing loads from a third-party server.
 
 Screenshots are in `docs/screenshots/`.
 
@@ -352,4 +363,4 @@ page and in the admin footer is there for that: set `APP_SOURCE_URL` in `config.
 your version's code lives.
 
 Bundled third-party work: the ZXing barcode decoder (Apache License 2.0, `assets/vendor/ZXING-LICENSE.txt`)
-and IBM Plex Sans (SIL Open Font License 1.1, `assets/fonts/OFL.txt`).
+and the Archivo typeface (SIL Open Font License 1.1, `assets/fonts/OFL-archivo.txt`).

@@ -78,8 +78,8 @@ if (!function_exists('str_cut')) {
     }
 }
 if (!function_exists('h'))     { function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); } }
-if (!function_exists('money')) { function money($n) { $n = (float)$n; return ($n < 0 ? '-' : '').APP_CCY.number_format(abs($n), 2); } }
-if (!function_exists('pct'))   { function pct($n) { return number_format((float)$n, 1).' %'; } }
+if (!function_exists('money')) { function money($n) { $n = round((float)$n, 2); return ($n < 0 ? "\u{2212}" : '').APP_CCY.number_format(abs($n), 2); } }
+if (!function_exists('pct'))   { function pct($n) { $n = round((float)$n, 1); return ($n < 0 ? "\u{2212}" : '').number_format(abs($n), 1).'%'; } }
 if (!function_exists('redirect')) { function redirect($u) { header('Location: '.$u); exit; } }
 
 if (!function_exists('csrf')) {

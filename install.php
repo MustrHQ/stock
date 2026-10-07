@@ -170,12 +170,16 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 $STEPS = [1 => 'Before you start', 2 => 'Database', 3 => 'Your shop', 4 => 'Done'];
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Install — MustrHQ Stock</title><link rel="stylesheet" href="assets/app.css"></head>
+<title>Install – MustrHQ Stock</title><link rel="stylesheet" href="assets/app.css?v=<?= h(MUSTR_VERSION) ?>"></head>
 <body class="wiz-body">
+<header class="wiz-top">
+  <div class="brand"><span class="brand-box"><img src="assets/brand/logo-mark.svg" alt="" width="26" height="26"></span>
+    <span class="brand-name">MustrHQ Stock<small>Set-up</small></span></div>
+</header>
 <div class="wiz">
   <div class="wiz-head">
-    <div><div class="brand"><span class="brand-mark">M</span>MustrHQ <small>Stock</small></div>
-      <p>Setup takes about five minutes. There are no files to edit by hand.</p></div>
+    <h1>Set up your stock system</h1>
+    <p>About five minutes. There are no files to edit by hand.</p>
   </div>
 
   <?php if ($step >= 1 && $step <= 4): ?>
@@ -307,6 +311,6 @@ $STEPS = [1 => 'Before you start', 2 => 'Database', 3 => 'Your shop', 4 => 'Done
     <a class="btn primary" href="install.php?step=1">Back to the beginning</a>
   <?php endif; ?>
   </div>
-  <p class="wiz-foot">MustrHQ Stock · open source · AGPL-3.0 licence</p>
+  <p class="wiz-foot">MustrHQ Stock is free software under the GNU AGPL-3.0.</p>
 </div>
 </body></html>

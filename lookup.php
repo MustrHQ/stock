@@ -18,7 +18,7 @@ if ($aid && ($a = article($aid))):
                     WHERE cs.shop_id=? AND cl.article_id=? AND cs.status='confirmed'
                     ORDER BY cs.count_date DESC LIMIT 1", [$shop, $aid]);
 ?>
-  <div class="page-head"><div><h1><?= h($a['name']) ?></h1><div class="sub"><?= h($a['code']) ?> · <?= h($cat ?: 'Uncategorised') ?> · per <?= h($unit ?: 'each') ?></div></div></div>
+  <div class="page-head"><div><h1><?= h($a['name']) ?></h1><div class="sub"><?= h($cat ?: 'Uncategorised') ?>, counted per <?= h($unit ?: 'each') ?>, code <?= h($a['code']) ?></div></div></div>
 
   <div class="kpis">
     <div class="kpi"><div class="l">Stock on hand</div>

@@ -98,7 +98,7 @@ $sent  = $o['status'] === 'sent';
 $TITLE = 'Order '.$o['order_no'];
 require __DIR__.'/inc/header.php';
 ?>
-<div class="page-head"><div><h1><?= h($o['order_no']) ?></h1><div class="sub"><?= h($o['supplier']) ?> · <?= h(shop_label($SHOP)) ?></div></div></div>
+<div class="page-head"><div><h1><?= h($o['order_no']) ?></h1><div class="sub"><?= h($o['supplier']) ?>, delivering to <?= h($SHOP['name']) ?></div></div></div>
 
 <form method="post" data-dirty>
   <?= csrf_field() ?>
@@ -134,7 +134,7 @@ require __DIR__.'/inc/header.php';
           <tr>
             <td><div class="art"><a class="info" href="lookup.php?a=<?= (int)$l['article_id'] ?>">i</a>
               <div><span class="name"><?= h($l['name']) ?></span>
-                <div class="code"><?= h($l['code']) ?><?= $l['supplier_ref'] ? ' · supplier ref '.h($l['supplier_ref']) : '' ?></div></div></div></td>
+                <div class="code"><?= h($l['code']) ?><?= $l['supplier_ref'] ? ', supplier code '.h($l['supplier_ref']) : '' ?></div></div></div></td>
             <td class="muted"><?= h(rtrim(rtrim(number_format((float)$l['pack_size'],2,'.',''),'0'),'.')) ?> × <?= h($l['unit'] ?: 'each') ?></td>
             <td class="num <?= $oh < 0 ? 'neg' : '' ?>"><?= h(rtrim(rtrim(number_format($oh,2,'.',''),'0'),'.')) ?></td>
             <td class="num sug"><b><?= h(rtrim(rtrim(number_format((float)$l['suggested_qty'],2,'.',''),'0'),'.')) ?></b></td>
@@ -163,17 +163,17 @@ require __DIR__.'/inc/header.php';
     </div>
 
     <?php if ($draft): ?>
-      <div class="pad" style="border-top:1px solid var(--line)">
+      <div class="pad" style="border-top:1px solid var(--rule)">
         <label for="notes">Note for the supplier</label>
         <input id="notes" name="notes" value="<?= h($o['notes']) ?>" placeholder="Deliver before 10am, ring the side door">
       </div>
     <?php elseif ($o['notes']): ?>
-      <div class="pad muted" style="border-top:1px solid var(--line)">Note: <?= h($o['notes']) ?></div>
+      <div class="pad muted" style="border-top:1px solid var(--rule)">Note: <?= h($o['notes']) ?></div>
     <?php endif; ?>
   </div>
 
   <div class="actionbar">
-    <div class="left"><?= count($lines) ?> line(s)<?= $sent ? ' · leave a received box empty to accept the ordered quantity' : '' ?></div>
+    <div class="left"><?= count($lines) ?> line<?= count($lines) === 1 ? '' : 's' ?><?= $sent ? '. Leave a received box empty to accept the ordered quantity.' : '' ?></div>
     <a class="btn" href="orders.php">Back</a>
     <a class="btn" href="order-print.php?id=<?= (int)$id ?>" target="_blank">Print</a>
     <?php if ($draft): ?>

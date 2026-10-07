@@ -81,7 +81,7 @@ require __DIR__.'/inc/header.php';
 ?>
 <div class="page-head">
   <div><h1>Stock loss</h1>
-    <div class="sub"><?= h($weekLabel) ?> · week ending <?= h(date('l j F Y', strtotime($to))) ?> · <?= h(shop_label($SHOP)) ?></div></div>
+    <div class="sub"><?= h($SHOP['name']) ?>, week ending <?= h(date('l j F Y', strtotime($to))) ?></div></div>
   <div class="btn-row no-print">
     <a class="btn sm <?= $kind === 'product' ? 'on' : '' ?>" href="?kind=product&w=<?= $off ?>">Products</a>
     <a class="btn sm <?= $kind === 'ingredient' ? 'on' : '' ?>" href="?kind=ingredient&w=<?= $off ?>">Ingredients</a>

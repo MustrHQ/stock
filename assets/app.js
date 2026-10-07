@@ -158,3 +158,17 @@ document.querySelectorAll('[data-article-input]').forEach(function (input) {
     });
   }
 })();
+
+/* Count sheet: "3 of 10 counted" keeps up as you type or scan. */
+(function () {
+  var out = document.querySelector('[data-progress]');
+  var form = out && out.closest('form');
+  if (!form) return;
+  var update = function () {
+    var boxes = form.querySelectorAll('input.qty[name]'), done = 0;
+    boxes.forEach(function (b) { if (b.value.trim() !== '') done++; });
+    out.textContent = done + ' of ' + boxes.length + ' counted';
+  };
+  form.addEventListener('input', update);
+  update();
+})();

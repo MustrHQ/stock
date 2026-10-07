@@ -1,6 +1,6 @@
 <?php
-$TITLE = 'Home';
-$HIDE_OOS = true;          // this page asks with its own prompt instead of the strip
+$TITLE = 'Today';
+$HIDE_OOS = true;          // this page lists what has run out itself
 require __DIR__.'/inc/header.php';
 
 $today = date('Y-m-d');
@@ -22,18 +22,24 @@ $countLeft = $countConfirmed ? 0 : max(0, $countTotal - $countDone);
 function sheet_state($shop, $date, $type) {
     $s = waste_session($shop, $date, $type, false);
     $n = $s ? (int) col("SELECT COUNT(*) FROM waste_lines WHERE session_id=? AND qty>0", [$s['id']]) : 0;
-    return ['done' => $s && $s['status'] === 'confirmed', 'n' => $n];
+    $v = $s ? (float) col("SELECT COALESCE(SUM(line_value),0) FROM waste_lines WHERE session_id=?", [$s['id']]) : 0;
+    return ['done' => $s && $s['status'] === 'confirmed', 'n' => $n, 'value' => $v,
+            'at' => $s && $s['confirmed_at'] ? date('H:i', strtotime($s['confirmed_at'])) : ''];
 }
 $ing = sheet_state($shop, $today, 'ingredient');
 $sta = sheet_state($shop, $today, 'stales');
 $dmg = sheet_state($shop, $today, 'quality');
 
 /* ---- ordering + out of stock ---- */
-$oos         = out_of_stock_alerts($shop);
-$draftOrders = (int) col("SELECT COUNT(*) FROM orders WHERE shop_id=? AND status='draft'", [$shop]);
-$dueOrders   = (int) col("SELECT COUNT(*) FROM orders WHERE shop_id=? AND status='sent'", [$shop]);
+$oos = out_of_stock_alerts($shop);
+$arriving = all("SELECT o.id, o.order_no, o.delivery_date, s.name AS supplier,
+                        (SELECT COUNT(*) FROM order_lines l WHERE l.order_id=o.id) AS n
+                 FROM orders o JOIN suppliers s ON s.id=o.supplier_id
+                 WHERE o.shop_id=? AND o.status='sent' ORDER BY o.delivery_date, o.id LIMIT 6", [$shop]);
+$dueToday = count(array_filter($arriving, fn($o) => $o['delivery_date'] && $o['delivery_date'] <= $today));
+$drafts = (int) col("SELECT COUNT(*) FROM orders WHERE shop_id=? AND status='draft'", [$shop]);
 
-/* Prompt once per session for each new set of out-of-stock items. */
+/* Ask once per session for each new set of out-of-stock items. */
 $sig = md5(implode(',', array_column($oos, 'id')));
 $showPrompt = $oos && (($_SESSION['oos_seen'] ?? '') !== $sig);
 if ($showPrompt) $_SESSION['oos_seen'] = $sig;
@@ -45,39 +51,47 @@ $var = (float) col("SELECT COALESCE(SUM(mv_value),0) FROM movements WHERE shop_i
 $waste = (float) col("SELECT COALESCE(SUM(mv_value),0) FROM movements WHERE shop_id=? AND mv_type IN (?,?,?) AND mv_date BETWEEN ? AND ?",
                      [$shop, MV_WASTE_STA, MV_WASTE_ING, MV_WASTE_DMG, $wkFrom, $wkTo]);
 
-function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone) {
-    echo '<a class="tile '.h($tone).'" href="'.h($href).'">'.
-         '<span class="tile-ic">'.icon($icon, 20).'</span>'.
-         '<span class="t">'.h($title).'</span>'.
-         ($sub !== '' ? '<span class="s">'.h($sub).'</span>' : '').
-         '<span class="foot"><span class="tag '.h($tagTone).'">'.h($tag).'</span>'.
-         ($num === null ? '' : '<span class="n '.h($numTone).'">'.h($num).'</span>').
-         '</span></a>';
+/** One job on today's run-sheet. $state: done | open | todo | idle */
+function run_row($state, $href, $title, $detail, $stateText, $action) {
+    static $nextShown = false;                       // only the next job gets the navy button
+    $isNext = !$nextShown && ($state === 'todo' || $state === 'open');
+    if ($isNext) $nextShown = true;
+    $mark = $state === 'done' ? icon('check', 14) : '';
+    echo '<li class="run '.h($state).'">'.
+         '<span class="run-mark" aria-hidden="true">'.$mark.'</span>'.
+         '<a class="run-main" href="'.h($href).'"><strong>'.h($title).'</strong><span>'.h($detail).'</span></a>'.
+         '<span class="run-state">'.h($stateText).'</span>'.
+         '<a class="btn sm'.($isNext ? ' go' : '').'" href="'.h($href).'">'.h($action).'</a>'.
+         '</li>';
 }
+function lines($n) { return $n.' line'.($n === 1 ? '' : 's'); }
+$multiShop = is_admin() && (int) col("SELECT COUNT(*) FROM shops WHERE active=1") > 1;
 ?>
-<div class="page-head">
+<section class="daybar">
   <div>
-    <h1><?= h($SHOP['name']) ?></h1>
-    <div class="sub"><?= h(shop_label($SHOP)) ?> · <?= h(date('l j F Y')) ?></div>
+    <h1 class="daybar-date"><?= h(date('l j F')) ?></h1>
+    <div class="daybar-place">
+      <?php if ($multiShop): ?>
+        <form method="get" class="inline-form no-print">
+          <label for="shop" class="sr">Shop</label>
+          <select id="shop" name="shop" onchange="this.form.submit()" style="width:auto;height:34px;font-size:14px">
+            <?php foreach (all("SELECT * FROM shops WHERE active=1 ORDER BY code") as $s): ?>
+              <option value="<?= (int)$s['id'] ?>" <?= $s['id'] == $shop ? 'selected' : '' ?>><?= h($s['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </form>
+      <?php else: ?>
+        <?= h($SHOP['name']) ?><?= $SHOP['address'] ? ', '.h($SHOP['address']) : '' ?>
+      <?php endif; ?>
+    </div>
   </div>
-  <?php if (is_admin() && (int)col("SELECT COUNT(*) FROM shops WHERE active=1") > 1): ?>
-  <form method="get" class="no-print" style="min-width:240px">
-    <label for="shop">Working in</label>
-    <select id="shop" name="shop" onchange="this.form.submit()">
-      <?php foreach (all("SELECT * FROM shops WHERE active=1 ORDER BY code") as $s): ?>
-        <option value="<?= (int)$s['id'] ?>" <?= $s['id'] == $shop ? 'selected' : '' ?>><?= h($s['code'].' '.$s['name']) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </form>
-  <?php endif; ?>
-</div>
-
-<?php if ($oos): ?>
-<div class="msg err" role="status"><?= icon('alert', 16) ?>
-  <span><strong><?= count($oos) ?> <?= count($oos) === 1 ? 'item has' : 'items have' ?> run out</strong> and
-    <?= count($oos) === 1 ? 'is' : 'are' ?> not on any order yet. <a href="orders.php#out">Order <?= count($oos) === 1 ? 'it' : 'them' ?> now</a></span>
-</div>
-<?php endif; ?>
+  <div class="daybar-figs">
+    <div class="fig"><b class="<?= $oos ? 'neg' : '' ?>"><?= count($oos) ?></b><span>run out</span></div>
+    <div class="fig"><b><?= $countConfirmed ? icon('check', 22) : (int)$countLeft ?></b><span><?= $countConfirmed ? 'count confirmed' : 'left to count' ?></span></div>
+    <div class="fig"><b class="<?= $var < 0 ? 'neg' : '' ?>"><?= money($var) ?></b><span>count variance this week</span></div>
+    <div class="fig"><b class="<?= $waste < 0 ? 'neg' : '' ?>"><?= money($waste) ?></b><span>waste this week</span></div>
+  </div>
+</section>
 
 <section class="card pad install-card" data-install hidden>
   <div class="install-row">
@@ -90,48 +104,81 @@ function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone)
   </div>
 </section>
 
-<h2 class="grp-title">Today's sheets</h2>
-<div class="tiles">
-  <?php
-  tile('stock-count.php', 'count', $countConfirmed ? '' : 'blue', 'Stock count',
-       $countConfirmed ? 'Confirmed' : $countDone.' of '.$countTotal.' counted',
-       $countConfirmed ? null : $countLeft, $countLeft ? 'todo' : 'done',
-       $countConfirmed ? 'Complete' : 'To do', $countConfirmed ? 'ok' : 'todo');
-  tile('product-waste.php', 'trash', 'amber', 'Product waste', $sta['n'].' line'.($sta['n'] === 1 ? '' : 's').' recorded',
-       null, '', $sta['done'] ? 'Complete' : 'To do', $sta['done'] ? 'ok' : 'todo');
-  tile('ingredient-waste.php', 'drop', 'amber', 'Ingredient waste', $ing['n'].' line'.($ing['n'] === 1 ? '' : 's').' recorded',
-       null, '', $ing['done'] ? 'Complete' : 'To do', $ing['done'] ? 'ok' : 'todo');
-  tile('damaged-stock.php', 'shield', 'purple', 'Damaged stock', 'Spoiled or unsellable',
-       $dmg['n'] ?: null, '', $dmg['done'] ? 'Complete' : ($dmg['n'] ? 'Open' : 'Nothing logged'),
-       $dmg['done'] ? 'ok' : ($dmg['n'] ? 'warn' : ''));
-  ?>
-</div>
+<div class="today-grid">
+  <section class="card">
+    <div class="rep-head"><h2>Today's jobs</h2>
+      <span class="muted" style="font-size:13.5px"><?= (int)$countConfirmed + (int)$sta['done'] + (int)$ing['done'] ?> of 3 sheets confirmed</span></div>
+    <ul class="runsheet">
+      <?php
+      if ($countConfirmed)
+          run_row('done', 'stock-count.php', 'Stock count', lines($countTotal).' counted', 'Confirmed '.date('H:i', strtotime($cs['confirmed_at'])), 'View');
+      elseif ($countTotal === 0)
+          run_row('idle', 'stock-count.php', 'Stock count', 'Nothing is scheduled for today', 'Not needed', 'Count anyway');
+      else
+          run_row($countDone ? 'open' : 'todo', 'stock-count.php', 'Stock count', $countDone.' of '.lines($countTotal).' counted',
+                  $countDone ? 'In progress' : 'Not started', $countDone ? 'Carry on' : 'Start count');
 
-<h2 class="grp-title">Stock and ordering</h2>
-<div class="tiles">
-  <?php
-  tile('orders.php', 'cart', $oos ? 'red' : '', 'Ordering',
-       $dueOrders ? $dueOrders.' awaiting delivery' : 'Build, print and receive',
-       $oos ? count($oos) : ($draftOrders ?: null), $oos ? 'todo' : '',
-       $oos ? 'Out of stock' : ($draftOrders ? $draftOrders.' draft'.($draftOrders > 1 ? 's' : '') : 'Up to date'),
-       $oos ? 'todo' : ($draftOrders ? 'warn' : 'ok'));
-  tile('deliveries.php', 'truck', 'blue', 'Goods in', 'Deliveries and transfers', null, '', 'Record', 'blue');
-  tile('lookup.php', 'search', 'blue', 'Lookup stock', 'On hand and history', null, '', 'Search', 'blue');
-  tile('reports.php', 'chart', '', 'Stock loss', 'Variance and waste', null, '', 'Report', 'blue');
-  ?>
-</div>
+      run_row($sta['done'] ? 'done' : ($sta['n'] ? 'open' : 'todo'), 'product-waste.php', 'Product waste',
+              $sta['n'] ? lines($sta['n']).', '.money($sta['value']).' at cost' : 'Unsold food, end of day',
+              $sta['done'] ? 'Confirmed '.$sta['at'] : ($sta['n'] ? 'In progress' : 'Not started'),
+              $sta['done'] ? 'View' : ($sta['n'] ? 'Carry on' : 'Record waste'));
 
-<h2 class="grp-title">This week · <?= h(date('j M', strtotime($wkFrom))) ?> to <?= h(date('j M', strtotime($wkTo))) ?></h2>
-<div class="kpis">
-  <div class="kpi"><div class="l">Out of stock</div>
-    <div class="v <?= $oos ? 'neg' : '' ?>"><?= count($oos) ?></div><div class="h">Not on any order yet</div></div>
-  <div class="kpi"><div class="l">Counted today</div>
-    <div class="v"><?= (int)$countDone ?> <span class="faint" style="font-size:16px">/ <?= (int)$countTotal ?></span></div>
-    <div class="h">Lines with a quantity</div></div>
-  <div class="kpi"><div class="l">Count variance</div>
-    <div class="v <?= $var < 0 ? 'neg' : ($var > 0 ? 'pos' : '') ?>"><?= money($var) ?></div><div class="h">At cost price</div></div>
-  <div class="kpi"><div class="l">Waste</div>
-    <div class="v <?= $waste < 0 ? 'neg' : '' ?>"><?= money($waste) ?></div><div class="h">Product, ingredient and damaged</div></div>
+      run_row($ing['done'] ? 'done' : ($ing['n'] ? 'open' : 'todo'), 'ingredient-waste.php', 'Ingredient waste',
+              $ing['n'] ? lines($ing['n']).', '.money($ing['value']).' at cost' : 'Out-of-date or spoiled ingredients',
+              $ing['done'] ? 'Confirmed '.$ing['at'] : ($ing['n'] ? 'In progress' : 'Not started'),
+              $ing['done'] ? 'View' : ($ing['n'] ? 'Carry on' : 'Record waste'));
+
+      run_row($dmg['done'] ? 'done' : ($dmg['n'] ? 'open' : 'idle'), 'damaged-stock.php', 'Damaged stock',
+              $dmg['n'] ? lines($dmg['n']).', '.money($dmg['value']).' at cost' : 'Only if something arrived or got damaged',
+              $dmg['done'] ? 'Confirmed '.$dmg['at'] : ($dmg['n'] ? 'In progress' : 'Nothing logged'),
+              $dmg['n'] || $dmg['done'] ? 'View' : 'Log damage');
+
+      if ($dueToday)
+          run_row('todo', 'orders.php?status=sent', 'Receive deliveries', $dueToday.' '.($dueToday === 1 ? 'order is' : 'orders are').' due today',
+                  'Waiting', 'Book in');
+      ?>
+    </ul>
+  </section>
+
+  <div>
+    <section class="card" id="runout">
+      <div class="rep-head"><h2>Run out</h2>
+        <?php if ($oos): ?><a class="btn sm primary" href="orders.php#out">Order these</a><?php endif; ?></div>
+      <?php if (!$oos): ?>
+        <p class="pad muted" style="margin:0">Nothing has run out.</p>
+      <?php else: ?>
+        <ul class="list">
+          <?php foreach (array_slice($oos, 0, 6) as $r): ?>
+            <li><span class="what"><strong><?= h($r['name']) ?></strong><span><?= h($r['supplier'] ?: 'No supplier set') ?></span></span>
+              <span class="amt neg"><?= h(fmt_qty($r['on_hand'])) ?> <?= h($r['unit'] ?: 'each') ?></span></li>
+          <?php endforeach; ?>
+        </ul>
+        <?php if (count($oos) > 6): ?><div class="panel-foot"><a href="orders.php#out"><?= count($oos) - 6 ?> more</a></div><?php endif; ?>
+      <?php endif; ?>
+    </section>
+
+    <section class="card">
+      <div class="rep-head"><h2>Arriving</h2><a class="btn sm" href="orders.php">All orders</a></div>
+      <?php if (!$arriving): ?>
+        <p class="pad muted" style="margin:0">No orders on the way.<?= $drafts ? ' '.$drafts.' draft'.($drafts > 1 ? 's' : '').' not sent yet.' : '' ?></p>
+      <?php else: ?>
+        <ul class="list">
+          <?php foreach ($arriving as $o): $late = $o['delivery_date'] && $o['delivery_date'] < $today; ?>
+            <li><a class="what" href="order.php?id=<?= (int)$o['id'] ?>" style="color:inherit"><strong><?= h($o['supplier']) ?></strong>
+                <span><?= h($o['order_no']) ?>, <?= (int)$o['n'] ?> line<?= $o['n'] == 1 ? '' : 's' ?></span></a>
+              <span class="tag <?= $late ? 'todo' : ($o['delivery_date'] === $today ? 'warn' : 'blue') ?>">
+                <?= !$o['delivery_date'] ? 'No date' : ($late ? 'Late' : ($o['delivery_date'] === $today ? 'Today' : h(date('D j M', strtotime($o['delivery_date']))))) ?></span></li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+    </section>
+
+    <div class="shortcuts no-print">
+      <a class="btn sm" href="deliveries.php"><?= icon('truck', 15) ?>Goods in</a>
+      <a class="btn sm" href="lookup.php"><?= icon('search', 15) ?>Look up stock</a>
+      <a class="btn sm" href="reports.php"><?= icon('chart', 15) ?>Stock loss</a>
+    </div>
+  </div>
 </div>
 
 <?php if ($showPrompt): ?>
@@ -140,7 +187,7 @@ function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone)
     <div class="prompt-ic"><?= icon('cart', 20) ?></div>
     <div>
       <h2 id="oosTitle"><?= count($oos) === 1 ? 'An item has run out' : count($oos).' items have run out' ?></h2>
-      <p>These are at zero or below and nobody has ordered them yet. Add them to an order now?</p>
+      <p>They are at zero or below and nobody has ordered them yet.</p>
     </div>
   </div>
   <ul class="prompt-list">
@@ -151,8 +198,8 @@ function tile($href, $icon, $tone, $title, $sub, $num, $numTone, $tag, $tagTone)
     <?php if (count($oos) > 8): ?><li class="faint">and <?= count($oos) - 8 ?> more</li><?php endif; ?>
   </ul>
   <form method="dialog" class="prompt-foot">
-    <button class="btn" value="later">Remind me later</button>
-    <a class="btn primary" href="orders.php#out"><?= icon('cart', 16) ?>Review and order</a>
+    <button class="btn" value="later">Not now</button>
+    <a class="btn primary" href="orders.php#out"><?= icon('cart', 16) ?>Order them</a>
   </form>
 </dialog>
 <script>(function(){var d=document.getElementById('oosPrompt');if(d&&d.showModal)d.showModal();})();</script>

@@ -12,9 +12,8 @@ header('Content-Type: application/javascript; charset=utf-8');
 header('Cache-Control: no-cache');
 header('Service-Worker-Allowed: ./');
 $assets = ['assets/app.css', 'assets/app.js', 'assets/scan.js', 'assets/vendor/zxing.min.js',
-           'assets/fonts/plex-sans-400.woff2', 'assets/fonts/plex-sans-500.woff2',
-           'assets/fonts/plex-sans-600.woff2', 'assets/fonts/plex-sans-700.woff2',
-           'assets/icons/icon-192.png', 'assets/icons/favicon-32.png', 'offline.html'];
+           'assets/fonts/archivo-var.woff2',
+           'assets/brand/logo-mark.svg', 'assets/brand/logo-primary.svg', 'assets/icons/icon-192.png', 'assets/icons/favicon-32.png', 'offline.html'];
 ?>
 'use strict';
 const CACHE = 'mustr-stock-<?= preg_replace('/[^0-9A-Za-z\.\-]/', '', MUSTR_VERSION) ?>';
